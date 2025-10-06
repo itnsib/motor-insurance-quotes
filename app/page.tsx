@@ -143,9 +143,9 @@ export default function ComparisonPage() {
           <h3 className="font-bold text-sm mb-3">Vehicle Information</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1">Vehicle Make *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Make *</label>
               <select
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 value={formData.vehicleMake}
                 onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
               >
@@ -156,10 +156,10 @@ export default function ComparisonPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1">Vehicle Model *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Model *</label>
               <input
                 type="text"
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 placeholder="e.g., Camry"
                 value={formData.vehicleModel}
                 onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
@@ -169,9 +169,9 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1">Year Model</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Year Model</label>
               <select
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 value={formData.yearModel}
                 onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}
               >
@@ -182,10 +182,10 @@ export default function ComparisonPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1">Vehicle Value</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Value</label>
               <input
                 type="text"
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 placeholder="e.g., AED 85,000"
                 value={formData.vehicleValue}
                 onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })}
@@ -194,9 +194,9 @@ export default function ComparisonPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold mb-1">Repair Type</label>
+            <label className="block text-xs font-bold mb-1 text-gray-700">Repair Type</label>
             <select
-              className="w-full p-2 border rounded text-sm"
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
               value={formData.repairType}
               onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}
             >
@@ -212,9 +212,9 @@ export default function ComparisonPage() {
           <h3 className="font-bold text-sm mb-3">Quote Details</h3>
           
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1">Insurance Company *</label>
+            <label className="block text-xs font-bold mb-1 text-gray-700">Insurance Company *</label>
             <select
-              className="w-full p-2 border rounded text-sm"
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
               value={formData.insuranceCompany}
               onChange={(e) => handleCompanyChange(e.target.value)}
             >
@@ -226,10 +226,10 @@ export default function ComparisonPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1">Loss or Damage Coverage</label>
+            <label className="block text-xs font-bold mb-1 text-gray-700">Loss or Damage Coverage</label>
             <input
               type="number"
-              className="w-full p-2 border rounded text-sm"
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
               placeholder="Amount in AED"
               value={formData.lossOrDamage || ''}
               onChange={(e) => setFormData({ ...formData, lossOrDamage: parseFloat(e.target.value) || 0 })}
@@ -237,7 +237,7 @@ export default function ComparisonPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1">Coverage Options</label>
+            <label className="block text-xs font-bold mb-1 text-gray-700">Coverage Options</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {COVERAGE_OPTIONS.map(option => (
                 <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100">
@@ -254,20 +254,20 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1">Excess</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Excess</label>
               <input
                 type="number"
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 placeholder="1000"
                 value={formData.excess || ''}
                 onChange={(e) => setFormData({ ...formData, excess: parseFloat(e.target.value) || 0 })}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1">Premium *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Premium *</label>
               <input
                 type="number"
-                className="w-full p-2 border rounded text-sm"
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 placeholder="2500"
                 value={formData.premium || ''}
                 onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)}
@@ -277,7 +277,7 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1">VAT (5%)</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">VAT (5%)</label>
               <input
                 type="number"
                 className="w-full p-2 border rounded text-sm bg-gray-100"
@@ -286,7 +286,7 @@ export default function ComparisonPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1">Total Amount</label>
+              <label className="block text-xs font-bold mb-1 text-gray-700">Total Amount</label>
               <input
                 type="number"
                 className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600"
