@@ -1,103 +1,443 @@
-import Image from "next/image";
+// app/page.tsx
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import { Quote, VEHICLE_MAKES, YEARS, INSURANCE_COMPANIES, COVERAGE_OPTIONS } from '@/types/quote';
+import { getCoverageDefaults, calculateVAT } from '@/utils/coverageDefaults';
+
+export default function ComparisonPage() {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [formData, setFormData] = useState({
+    vehicleMake: '',
+    vehicleModel: '',
+    yearModel: '',
+    vehicleValue: '',
+    repairType: '',
+    insuranceCompany: '',
+    lossOrDamage: 0,
+    excess: 0,
+    premium: 0,
+  });
+  const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
+  const [vat, setVat] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const handlePremiumChange = (premium: number) => {
+    const { vat: calculatedVat, total: calculatedTotal } = calculateVAT(premium);
+    setVat(calculatedVat);
+    setTotal(calculatedTotal);
+    setFormData({ ...formData, premium });
+  };
+
+  const handleCompanyChange = (company: string) => {
+    setFormData({ ...formData, insuranceCompany: company });
+    const defaults = getCoverageDefaults(company);
+    setSelectedCoverage(defaults);
+  };
+
+  const handleCoverageToggle = (label: string) => {
+    setSelectedCoverage(prev =>
+      prev.includes(label)
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
+  };
+
+  const addQuote = () => {
+    if (!formData.vehicleMake || !formData.vehicleModel || !formData.insuranceCompany || !formData.premium) {
+      alert('Please fill required fields');
+      return;
+    }
+
+    const existingIndex = quotes.findIndex(q => q.company === formData.insuranceCompany);
+    if (existingIndex !== -1) {
+      if (!confirm(`Quote for ${formData.insuranceCompany} already exists. Replace it?`)) {
+        return;
+      }
+      const newQuotes = [...quotes];
+      newQuotes.splice(existingIndex, 1);
+      setQuotes(newQuotes);
+    }
+
+    const newQuote: Quote = {
+      id: Date.now().toString(),
+      make: formData.vehicleMake,
+      model: formData.vehicleModel,
+      year: formData.yearModel || 'Not specified',
+      value: formData.vehicleValue || 'Not specified',
+      repairType: formData.repairType || 'Not specified',
+      company: formData.insuranceCompany,
+      lossOrDamage: formData.lossOrDamage,
+      coverageOptions: selectedCoverage,
+      excess: formData.excess,
+      premium: formData.premium,
+      vat,
+      total,
+    };
+
+    setQuotes([...quotes, newQuote]);
+    clearForm();
+    alert('Quote added successfully!');
+  };
+
+  const clearForm = () => {
+    setFormData({
+      ...formData,
+      insuranceCompany: '',
+      lossOrDamage: 0,
+      excess: 0,
+      premium: 0,
+    });
+    setSelectedCoverage([]);
+    setVat(0);
+    setTotal(0);
+  };
+
+  const removeQuote = (id: string) => {
+    setQuotes(quotes.filter(q => q.id !== id));
+  };
+
+  const clearAllQuotes = () => {
+    setQuotes([]);
+  };
+
+  const addDemoData = () => {
+    const demoQuotes: Quote[] = [
+      { company: 'AXA INSURANCE (GULF) B.S.C.(C)', premium: 2400, excess: 1000 },
+      { company: 'DUBAI INSURANCE CO. PSC', premium: 2200, excess: 800 },
+      { company: 'Liva Insurance', premium: 2600, excess: 1200 }
+    ].map((data, index) => {
+      const { vat: demoVat, total: demoTotal } = calculateVAT(data.premium);
+      return {
+        id: (Date.now() + index).toString(),
+        make: 'Toyota',
+        model: 'Camry',
+        year: '2020',
+        value: 'AED 85,000',
+        repairType: 'Agency',
+        company: data.company,
+        lossOrDamage: 85000,
+        coverageOptions: getCoverageDefaults(data.company),
+        excess: data.excess,
+        premium: data.premium,
+        vat: demoVat,
+        total: demoTotal,
+      };
+    });
+
+    setQuotes(demoQuotes);
+    alert('Demo data added successfully!');
+  };
+
+  const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
+  const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
+      {/* Form Panel */}
+      <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-120px)] overflow-y-auto">
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Motor Insurance Quote System</h2>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Vehicle Information */}
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <h3 className="font-bold text-sm mb-3">Vehicle Information</h3>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1">Vehicle Make *</label>
+              <select
+                className="w-full p-2 border rounded text-sm"
+                value={formData.vehicleMake}
+                onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
+              >
+                <option value="">Select Make</option>
+                {VEHICLE_MAKES.map(make => (
+                  <option key={make} value={make}>{make}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1">Vehicle Model *</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded text-sm"
+                placeholder="e.g., Camry"
+                value={formData.vehicleModel}
+                onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1">Year Model</label>
+              <select
+                className="w-full p-2 border rounded text-sm"
+                value={formData.yearModel}
+                onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}
+              >
+                <option value="">Select Year</option>
+                {YEARS.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1">Vehicle Value</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded text-sm"
+                placeholder="e.g., AED 85,000"
+                value={formData.vehicleValue}
+                onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1">Repair Type</label>
+            <select
+              className="w-full p-2 border rounded text-sm"
+              value={formData.repairType}
+              onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}
+            >
+              <option value="">Select Type</option>
+              <option value="Agency">Agency</option>
+              <option value="Non-Agency">Non-Agency</option>
+            </select>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Quote Details */}
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <h3 className="font-bold text-sm mb-3">Quote Details</h3>
+          
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1">Insurance Company *</label>
+            <select
+              className="w-full p-2 border rounded text-sm"
+              value={formData.insuranceCompany}
+              onChange={(e) => handleCompanyChange(e.target.value)}
+            >
+              <option value="">Select Company</option>
+              {INSURANCE_COMPANIES.map(company => (
+                <option key={company} value={company}>{company}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1">Loss or Damage Coverage</label>
+            <input
+              type="number"
+              className="w-full p-2 border rounded text-sm"
+              placeholder="Amount in AED"
+              value={formData.lossOrDamage || ''}
+              onChange={(e) => setFormData({ ...formData, lossOrDamage: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1">Coverage Options</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {COVERAGE_OPTIONS.map(option => (
+                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100">
+                  <input
+                    type="checkbox"
+                    checked={selectedCoverage.includes(option.label)}
+                    onChange={() => handleCoverageToggle(option.label)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1">Excess</label>
+              <input
+                type="number"
+                className="w-full p-2 border rounded text-sm"
+                placeholder="1000"
+                value={formData.excess || ''}
+                onChange={(e) => setFormData({ ...formData, excess: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1">Premium *</label>
+              <input
+                type="number"
+                className="w-full p-2 border rounded text-sm"
+                placeholder="2500"
+                value={formData.premium || ''}
+                onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1">VAT (5%)</label>
+              <input
+                type="number"
+                className="w-full p-2 border rounded text-sm bg-gray-100"
+                value={vat}
+                readOnly
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1">Total Amount</label>
+              <input
+                type="number"
+                className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600"
+                value={total}
+                readOnly
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={addQuote}
+            className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition mb-2"
+          >
+            Add Quote
+          </button>
+          <button
+            onClick={addDemoData}
+            className="w-full bg-yellow-500 text-gray-900 p-2 rounded-lg font-bold hover:bg-yellow-600 transition"
+          >
+            Add Demo Data
+          </button>
+        </div>
+
+        {/* Added Quotes */}
+        {quotes.length > 0 && (
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h4 className="text-sm font-bold text-green-800 mb-2">
+              Added Quotes ({quotes.length})
+            </h4>
+            <div className="space-y-2 mb-3">
+              {quotes.map(quote => (
+                <div key={quote.id} className="bg-white p-2 rounded flex justify-between items-center border-l-4 border-indigo-600">
+                  <div>
+                    <div className="font-bold text-xs text-indigo-600">{quote.company}</div>
+                    <div className="text-xs text-gray-600">{quote.make} {quote.model} - AED {quote.total.toLocaleString()}</div>
+                  </div>
+                  <button
+                    onClick={() => removeQuote(quote.id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={clearAllQuotes}
+              className="w-full bg-red-500 text-white p-2 rounded-lg font-bold hover:bg-red-600 transition"
+            >
+              Clear All Quotes
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Comparison Panel */}
+      <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-120px)] overflow-auto">
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Insurance Comparison Table</h2>
+        
+        {sortedQuotes.length === 0 ? (
+          <div className="text-center text-gray-400 italic py-20">
+            Add insurance quotes from different companies to generate comparison table
+          </div>
+        ) : (
+          <>
+            <div className="bg-gray-50 p-4 rounded-lg mb-4 text-center border-l-4 border-indigo-600">
+              <h3 className="font-bold text-base mb-1">
+                Vehicle: {sortedQuotes[0].make} {sortedQuotes[0].model} ({sortedQuotes[0].year})
+              </h3>
+              <p className="text-sm text-gray-600">
+                Value: {sortedQuotes[0].value} | Repair: {sortedQuotes[0].repairType}
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="bg-indigo-600 text-white p-3 border text-left w-44">BENEFITS</th>
+                    {sortedQuotes.map((q, i) => (
+                      <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center">
+                        {i === 0 && (
+                          <div className="bg-green-500 px-2 py-1 rounded text-xs mb-1 inline-block">BEST PRICE</div>
+                        )}
+                        <div className="text-xs mb-1">{q.company}</div>
+                        <div className="text-sm font-bold">AED {q.total.toLocaleString()}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {allCoverageOptions.map(option => (
+                    <tr key={option}>
+                      <td className="p-2 border font-bold bg-gray-50">{option}</td>
+                      {sortedQuotes.map(q => {
+                        const included = q.coverageOptions.includes(option);
+                        return (
+                          <td key={q.id} className={`p-2 border text-center font-bold ${included ? 'text-green-600' : 'text-red-600'}`}>
+                            {included ? 'Yes' : 'No'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {sortedQuotes[0].lossOrDamage > 0 && (
+                    <tr>
+                      <td className="p-2 border font-bold bg-gray-50">Loss/Damage Coverage</td>
+                      {sortedQuotes.map(q => (
+                        <td key={q.id} className="p-2 border text-center">AED {q.lossOrDamage.toLocaleString()}</td>
+                      ))}
+                    </tr>
+                  )}
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50">Excess</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center">AED {q.excess.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50">Premium</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center">AED {q.premium.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50">VAT (5%)</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center">AED {q.vat.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr className="bg-blue-50">
+                    <td className="p-2 border font-bold">Total Premium</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center font-bold">AED {q.total.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {quotes.length > 1 && (
+              <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg mt-4 border-l-4 border-green-500">
+                <h4 className="font-bold text-green-800 mb-2">Comparison Summary</h4>
+                <p className="text-sm"><strong>Best Deal:</strong> {sortedQuotes[0].company} - AED {sortedQuotes[0].total.toLocaleString()}</p>
+                <p className="text-sm"><strong>You Save:</strong> AED {(sortedQuotes[sortedQuotes.length-1].total - sortedQuotes[0].total).toLocaleString()} vs highest quote</p>
+                <p className="text-sm"><strong>Companies Compared:</strong> {quotes.length}</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
