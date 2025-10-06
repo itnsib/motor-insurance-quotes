@@ -833,38 +833,38 @@ function SavedHistoryPage() {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg mb-4">
-              <h3 className="font-bold text-sm mb-3">Vehicle Information</h3>
+              <h3 className="font-bold text-sm mb-3 text-gray-800">Vehicle Information</h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="block text-xs font-bold mb-1">Make *</label>
-                  <select className="w-full p-2 border rounded text-sm" value={formData.vehicleMake} onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}>
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Make *</label>
+                  <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.vehicleMake} onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}>
                     <option value="">Select</option>
                     {VEHICLE_MAKES.map(make => <option key={make} value={make}>{make}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1">Model *</label>
-                  <input type="text" className="w-full p-2 border rounded text-sm" value={formData.vehicleModel} onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })} />
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Model *</label>
+                  <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.vehicleModel} onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="block text-xs font-bold mb-1">Year</label>
-                  <select className="w-full p-2 border rounded text-sm" value={formData.yearModel} onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}>
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Year</label>
+                  <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.yearModel} onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}>
                     <option value="">Select</option>
                     {YEARS.map(year => <option key={year} value={year}>{year}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1">Value</label>
-                  <input type="text" className="w-full p-2 border rounded text-sm" value={formData.vehicleValue} onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })} />
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Value</label>
+                  <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.vehicleValue} onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })} />
                 </div>
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs font-bold mb-1">Repair Type</label>
-                <select className="w-full p-2 border rounded text-sm" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
+                <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
+                <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
                   <option value="">Select</option>
                   <option value="Agency">Agency</option>
                   <option value="Non-Agency">Non-Agency</option>
@@ -872,18 +872,18 @@ function SavedHistoryPage() {
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs font-bold mb-1">Insurance Company *</label>
-                <select className="w-full p-2 border rounded text-sm" value={formData.insuranceCompany} onChange={(e) => setFormData({ ...formData, insuranceCompany: e.target.value })}>
+                <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
+                <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.insuranceCompany} onChange={(e) => setFormData({ ...formData, insuranceCompany: e.target.value })}>
                   <option value="">Select</option>
                   {INSURANCE_COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs font-bold mb-1">Coverage Options</label>
+                <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {COVERAGE_OPTIONS.map(option => (
-                    <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100">
+                    <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gray-800">
                       <input type="checkbox" checked={selectedCoverage.includes(option.label)} onChange={() => handleCoverageToggle(option.label)} />
                       <span>{option.label}</span>
                     </label>
@@ -893,22 +893,22 @@ function SavedHistoryPage() {
 
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="block text-xs font-bold mb-1">Excess</label>
-                  <input type="number" className="w-full p-2 border rounded text-sm" value={formData.excess || ''} onChange={(e) => setFormData({ ...formData, excess: parseFloat(e.target.value) || 0 })} />
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
+                  <input type="number" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.excess || ''} onChange={(e) => setFormData({ ...formData, excess: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1">Premium *</label>
-                  <input type="number" className="w-full p-2 border rounded text-sm" value={formData.premium || ''} onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)} />
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Premium *</label>
+                  <input type="number" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.premium || ''} onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="block text-xs font-bold mb-1">VAT (5%)</label>
-                  <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100" value={vat} readOnly />
+                  <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
+                  <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 text-gray-900" value={vat} readOnly />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1">Total</label>
+                  <label className="block text-xs font-bold mb-1 text-gray-800">Total</label>
                   <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600" value={total} readOnly />
                 </div>
               </div>
@@ -985,8 +985,8 @@ function SavedHistoryPage() {
                   const sorted = [...selectedComparison.quotes].sort((a, b) => a.total - b.total);
                   return (
                     <>
-                      <p className="text-sm"><strong>Best:</strong> {sorted[0].company} - AED {sorted[0].total.toLocaleString()}</p>
-                      <p className="text-sm"><strong>Save:</strong> AED {(sorted[sorted.length-1].total - sorted[0].total).toLocaleString()} vs highest</p>
+                      <p className="text-sm text-gray-800"><strong className="text-gray-900">Best:</strong> {sorted[0].company} - AED {sorted[0].total.toLocaleString()}</p>
+                      <p className="text-sm text-gray-800"><strong className="text-gray-900">Save:</strong> AED {(sorted[sorted.length-1].total - sorted[0].total).toLocaleString()} vs highest</p>
                     </>
                   );
                 })()}
