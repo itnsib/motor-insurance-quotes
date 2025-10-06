@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Quote, VEHICLE_MAKES, YEARS, INSURANCE_COMPANIES, COVERAGE_OPTIONS } from '@/types/quote';
 import { getCoverageDefaults, calculateVAT } from '@/utils/coverageDefaults';
 
@@ -21,6 +21,28 @@ export default function ComparisonPage() {
   const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+
+  // Load saved quotes from localStorage
+  useEffect(() => {
+    const savedQuotes = localStorage.getItem('insuranceQuotes');
+    if (savedQuotes) {
+      try {
+        setQuotes(JSON.parse(savedQuotes));
+      } catch (error) {
+        console.error('Error loading saved quotes:', error);
+      }
+    }
+  }, []);
+
+  // Auto-save quotes to localStorage
+  useEffect(() => {
+    if (quotes.length > 0) {
+      localStorage.setItem('insuranceQuotes', JSON.stringify(quotes));
+    } else {
+      localStorage.removeItem('insuranceQuotes');
+    }
+  }, [quotes]);
 
   const handlePremiumChange = (premium: number) => {
     const { vat: calculatedVat, total: calculatedTotal } = calculateVAT(premium);
@@ -49,6 +71,33 @@ export default function ComparisonPage() {
       return;
     }
 
+    if (editingQuoteId) {
+      // Update existing quote
+      const updatedQuotes = quotes.map(q => 
+        q.id === editingQuoteId ? {
+          ...q,
+          make: formData.vehicleMake,
+          model: formData.vehicleModel,
+          year: formData.yearModel || 'Not specified',
+          value: formData.vehicleValue || 'Not specified',
+          repairType: formData.repairType || 'Not specified',
+          company: formData.insuranceCompany,
+          lossOrDamage: formData.lossOrDamage,
+          coverageOptions: selectedCoverage,
+          excess: formData.excess,
+          premium: formData.premium,
+          vat,
+          total,
+        } : q
+      );
+      setQuotes(updatedQuotes);
+      setEditingQuoteId(null);
+      clearForm();
+      alert('Quote updated successfully!');
+      return;
+    }
+
+    // Add new quote
     const existingIndex = quotes.findIndex(q => q.company === formData.insuranceCompany);
     if (existingIndex !== -1) {
       if (!confirm(`Quote for ${formData.insuranceCompany} already exists. Replace it?`)) {
@@ -80,9 +129,39 @@ export default function ComparisonPage() {
     alert('Quote added successfully!');
   };
 
+  const editQuote = (quote: Quote) => {
+    setFormData({
+      vehicleMake: quote.make,
+      vehicleModel: quote.model,
+      yearModel: quote.year === 'Not specified' ? '' : quote.year,
+      vehicleValue: quote.value === 'Not specified' ? '' : quote.value,
+      repairType: quote.repairType === 'Not specified' ? '' : quote.repairType,
+      insuranceCompany: quote.company,
+      lossOrDamage: quote.lossOrDamage,
+      excess: quote.excess,
+      premium: quote.premium,
+    });
+    setSelectedCoverage(quote.coverageOptions);
+    setVat(quote.vat);
+    setTotal(quote.total);
+    setEditingQuoteId(quote.id);
+    
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingQuoteId(null);
+    clearForm();
+  };
+
   const clearForm = () => {
     setFormData({
-      ...formData,
+      vehicleMake: '',
+      vehicleModel: '',
+      yearModel: '',
+      vehicleValue: '',
+      repairType: '',
       insuranceCompany: '',
       lossOrDamage: 0,
       excess: 0,
@@ -94,11 +173,22 @@ export default function ComparisonPage() {
   };
 
   const removeQuote = (id: string) => {
-    setQuotes(quotes.filter(q => q.id !== id));
+    if (confirm('Are you sure you want to remove this quote?')) {
+      setQuotes(quotes.filter(q => q.id !== id));
+      if (editingQuoteId === id) {
+        setEditingQuoteId(null);
+        clearForm();
+      }
+    }
   };
 
   const clearAllQuotes = () => {
-    setQuotes([]);
+    if (confirm('This will clear all saved quotes. Are you sure?')) {
+      setQuotes([]);
+      localStorage.removeItem('insuranceQuotes');
+      setEditingQuoteId(null);
+      clearForm();
+    }
   };
 
   const addDemoData = () => {
@@ -282,7 +372,16 @@ export default function ComparisonPage() {
   return (
     <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-120px)] overflow-y-auto">
-        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Motor Insurance Quote System</h2>
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">
+          {editingQuoteId ? 'Edit Quote' : 'Motor Insurance Quote System'}
+        </h2>
+
+        {editingQuoteId && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4">
+            <p className="text-sm text-yellow-800 font-bold">Editing Mode</p>
+            <p className="text-xs text-yellow-700">Modify the quote and click Update Quote</p>
+          </div>
+        )}
 
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
           <h3 className="font-bold text-sm mb-3 text-gray-800">Vehicle Information</h3>
@@ -380,8 +479,21 @@ export default function ComparisonPage() {
             </div>
           </div>
 
-          <button onClick={addQuote} className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition mb-2">Add Quote</button>
-          <button onClick={addDemoData} className="w-full bg-yellow-500 text-gray-900 p-2 rounded-lg font-bold hover:bg-yellow-600 transition">Add Demo Data</button>
+          <button onClick={addQuote} className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition mb-2">
+            {editingQuoteId ? 'Update Quote' : 'Add Quote'}
+          </button>
+          
+          {editingQuoteId && (
+            <button onClick={cancelEdit} className="w-full bg-gray-500 text-white p-2 rounded-lg font-bold hover:bg-gray-600 transition mb-2">
+              Cancel Edit
+            </button>
+          )}
+          
+          {!editingQuoteId && (
+            <button onClick={addDemoData} className="w-full bg-yellow-500 text-gray-900 p-2 rounded-lg font-bold hover:bg-yellow-600 transition">
+              Add Demo Data
+            </button>
+          )}
         </div>
 
         {quotes.length > 0 && (
@@ -389,16 +501,25 @@ export default function ComparisonPage() {
             <h4 className="text-sm font-bold text-green-800 mb-2">Added Quotes ({quotes.length})</h4>
             <div className="space-y-2 mb-3">
               {quotes.map(quote => (
-                <div key={quote.id} className="bg-white p-2 rounded flex justify-between items-center border-l-4 border-indigo-600">
-                  <div>
+                <div key={quote.id} className={`bg-white p-2 rounded flex justify-between items-center ${editingQuoteId === quote.id ? 'border-l-4 border-yellow-500' : 'border-l-4 border-indigo-600'}`}>
+                  <div className="flex-1">
                     <div className="font-bold text-xs text-indigo-600">{quote.company}</div>
                     <div className="text-xs text-gray-600">{quote.make} {quote.model} - AED {quote.total.toLocaleString()}</div>
                   </div>
-                  <button onClick={() => removeQuote(quote.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">Remove</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => editQuote(quote)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">
+                      Edit
+                    </button>
+                    <button onClick={() => removeQuote(quote.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-            <button onClick={clearAllQuotes} className="w-full bg-red-500 text-white p-2 rounded-lg font-bold hover:bg-red-600 transition">Clear All Quotes</button>
+            <button onClick={clearAllQuotes} className="w-full bg-red-500 text-white p-2 rounded-lg font-bold hover:bg-red-600 transition">
+              Clear All Quotes
+            </button>
           </div>
         )}
       </div>
