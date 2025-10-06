@@ -240,7 +240,7 @@ export default function ComparisonPage() {
             <label className="block text-xs font-bold mb-1 text-gray-700">Coverage Options</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {COVERAGE_OPTIONS.map(option => (
-                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100">
+                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gr
                   <input
                     type="checkbox"
                     checked={selectedCoverage.includes(option.label)}
@@ -380,7 +380,7 @@ export default function ComparisonPage() {
                 <tbody>
                   {allCoverageOptions.map(option => (
                     <tr key={option}>
-                      <td className="p-2 border font-bold bg-gray-50">{option}</td>
+                      <td className="p-2 border font-bold bg-gray-50 text-gray-900">{option}</td>
                       {sortedQuotes.map(q => {
                         const included = q.coverageOptions.includes(option);
                         return (
@@ -426,6 +426,12 @@ export default function ComparisonPage() {
                 </tbody>
               </table>
             </div>
+		<button
+  onClick={generateDocument}
+  className="w-full mt-4 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition"
+>
+  Generate Document
+</button>
 
             {quotes.length > 1 && (
               <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg mt-4 border-l-4 border-green-500">
