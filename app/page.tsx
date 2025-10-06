@@ -1,5 +1,24 @@
+// app/page.tsx
 'use client';
+
 import { useState, useEffect } from 'react';
+
+// ============ TYPES ============
+interface Quote {
+  id: string;
+  make: string;
+  model: string;
+  year: string;
+  value: string;
+  repairType: string;
+  company: string;
+  lossOrDamage: number;
+  coverageOptions: string[];
+  excess: number;
+  premium: number;
+  vat: number;
+  total: number;
+}
 
 // ============ CONSTANTS ============
 const VEHICLE_MAKES = ['Toyota', 'Nissan', 'Hyundai', 'Mercedes-Benz', 'BMW', 'Audi', 'Honda', 'Ford', 'Lexus', 'Volkswagen', 'Chevrolet', 'Kia', 'Land Rover', 'Porsche', 'Mazda', 'Mitsubishi'];
@@ -34,8 +53,8 @@ const COVERAGE_OPTIONS = [
   { id: 'hirecarBenefit', label: 'Hire car Benefit' }
 ];
 
-const getCoverageDefaults = (company) => {
-  const defaults = {
+const getCoverageDefaults = (company: string): string[] => {
+  const defaults: Record<string, string[]> = {
     'UNITED FIDELITY INSURANCE COMPANY PSC': ['Natural Calamities Riot and strike', 'Emergency medical expenses', 'Passengers Cover', 'Optional Covers Driver Cover'],
     'EMIRATES INSURANCE CO. (PSC)': ['Passengers Cover', 'Optional Covers Driver Cover', 'Natural Calamities Riot and strike', 'Oman Cover (Own damage only)'],
     'Liva Insurance': ['Oman Cover (Own damage only)', 'Natural Calamities Riot and strike', 'Excess for windscreen damage', '24 Hour Accident and Breakdown Recovery', 'Passengers Cover', 'Optional Covers Driver Cover'],
@@ -46,13 +65,13 @@ const getCoverageDefaults = (company) => {
   return defaults[company] || [];
 };
 
-const calculateVAT = (premium) => {
+const calculateVAT = (premium: number): { vat: number; total: number } => {
   const vat = Math.round(premium * 0.05);
   return { vat, total: premium + vat };
 };
 
 export default function ComparisonPage() {
-  const [quotes, setQuotes] = useState([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [formData, setFormData] = useState({
     vehicleMake: '',
     vehicleModel: '',
@@ -64,10 +83,10 @@ export default function ComparisonPage() {
     excess: 0,
     premium: 0,
   });
-  const [selectedCoverage, setSelectedCoverage] = useState([]);
+  const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
-  const [editingQuoteId, setEditingQuoteId] = useState(null);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
 
   // Load saved quotes from localStorage
   useEffect(() => {
@@ -90,20 +109,20 @@ export default function ComparisonPage() {
     }
   }, [quotes]);
 
-  const handlePremiumChange = (premium) => {
+  const handlePremiumChange = (premium: number) => {
     const { vat: calculatedVat, total: calculatedTotal } = calculateVAT(premium);
     setVat(calculatedVat);
     setTotal(calculatedTotal);
     setFormData({ ...formData, premium });
   };
 
-  const handleCompanyChange = (company) => {
+  const handleCompanyChange = (company: string) => {
     setFormData({ ...formData, insuranceCompany: company });
     const defaults = getCoverageDefaults(company);
     setSelectedCoverage(defaults);
   };
 
-  const handleCoverageToggle = (label) => {
+  const handleCoverageToggle = (label: string) => {
     setSelectedCoverage(prev =>
       prev.includes(label)
         ? prev.filter(item => item !== label)
@@ -154,7 +173,7 @@ export default function ComparisonPage() {
       setQuotes(newQuotes);
     }
 
-    const newQuote = {
+    const newQuote: Quote = {
       id: Date.now().toString(),
       make: formData.vehicleMake,
       model: formData.vehicleModel,
@@ -175,7 +194,7 @@ export default function ComparisonPage() {
     alert('Quote added successfully!');
   };
 
-  const editQuote = (quote) => {
+  const editQuote = (quote: Quote) => {
     setFormData({
       vehicleMake: quote.make,
       vehicleModel: quote.model,
@@ -218,7 +237,7 @@ export default function ComparisonPage() {
     setTotal(0);
   };
 
-  const removeQuote = (id) => {
+  const removeQuote = (id: string) => {
     if (confirm('Are you sure you want to remove this quote?')) {
       setQuotes(quotes.filter(q => q.id !== id));
       if (editingQuoteId === id) {
@@ -238,7 +257,7 @@ export default function ComparisonPage() {
   };
 
   const addDemoData = () => {
-    const demoQuotes = [
+    const demoQuotes: Quote[] = [
       { company: 'AXA INSURANCE (GULF) B.S.C.(C)', premium: 2400, excess: 1000 },
       { company: 'DUBAI INSURANCE CO. PSC', premium: 2200, excess: 800 },
       { company: 'Liva Insurance', premium: 2600, excess: 1200 }
