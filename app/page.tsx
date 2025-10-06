@@ -780,6 +780,153 @@ function SavedHistoryPage() {
     if (editingQuote?.id === quoteId) setEditingQuote(null);
   };
 
+  const generateDocument = () => {
+    if (!selectedComparison || selectedComparison.quotes.length === 0) return;
+
+    const sortedQuotes = [...selectedComparison.quotes].sort((a, b) => a.total - b.total);
+    const allCoverageOptions = [...new Set(selectedComparison.quotes.flatMap(q => q.coverageOptions))];
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NSIB Insurance Comparison</title>
+    <style>
+        @page { size: A4; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; font-size: 8px; }
+        .page1 { width: 210mm; height: 297mm; page-break-after: always; }
+        .page1 img { width: 100%; height: 100%; object-fit: contain; }
+        .page2 { width: 210mm; height: 297mm; padding: 8mm 10mm 35mm 10mm; page-break-after: always; position: relative; }
+        .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
+        .header-logo { height: 12mm; }
+        .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
+        .section-title { font-size: 14px; font-weight: bold; text-align: center; margin: 3mm 0; }
+        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 9px; }
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin: 2mm 0; table-layout: fixed; }
+        .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2mm 1.5mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        .comparison-table th { background: #1e40af; color: white; font-size: 9.5px; padding: 2.5mm 1.5mm; }
+        .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 35mm; }
+        .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; }
+        .included { color: #28a745; font-weight: bold; }
+        .not-included { color: #dc3545; font-weight: bold; }
+        .total-row { background: #e3f2fd !important; font-weight: bold; }
+        .summary-box { background: #d4edda; padding: 2mm; margin: 2mm 0; font-size: 8px; border-left: 2mm solid #28a745; }
+        .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 7px; line-height: 1.4; border-left: 2mm solid #ffc107; }
+        .disclaimer h4 { font-size: 9px; margin-bottom: 2mm; color: #856404; }
+        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: white; font-size: 8.5px; line-height: 1.5; }
+        .footer-left, .footer-right { flex: 1; }
+        .footer-right { text-align: right; }
+        .footer-contact strong { display: block; margin-bottom: 1mm; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style>
+</head>
+<body>
+    <div class="page1">
+        <img src="https://i.imgur.com/qgsax5Y.png" alt="About">
+    </div>
+    <div class="page2">
+        <div class="header-simple">
+            <img src="https://i.imgur.com/GCOPBN1.png" alt="Logo" class="header-logo">
+            <img src="https://i.imgur.com/Wsv3Ah2.png" alt="Corner" class="header-corner">
+        </div>
+        <div class="section-title">MOTOR INSURANCE COMPARISON</div>
+        <div class="vehicle-info">
+            <strong>Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong><br>
+            Value: ${sortedQuotes[0].value} | Repair: ${sortedQuotes[0].repairType}
+        </div>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>BENEFITS</th>
+                    ${sortedQuotes.map((q, i) => `
+                        <th>
+                            ${i === 0 ? '<div style="background: #28a745; padding: 0.5mm 1mm; border-radius: 1mm; font-size: 6px; margin-bottom: 1mm;">BEST</div>' : ''}
+                            <div style="font-size: 7px; margin-bottom: 1mm;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            <div style="font-size: 9px; font-weight: bold;">AED ${q.total.toLocaleString()}</div>
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                ${allCoverageOptions.map(option => `
+                    <tr>
+                        <td>${option}</td>
+                        ${sortedQuotes.map(q => {
+                            const inc = q.coverageOptions.includes(option);
+                            return `<td class="${inc ? 'included' : 'not-included'}">${inc ? 'Yes' : 'No'}</td>`;
+                        }).join('')}
+                    </tr>
+                `).join('')}
+                ${sortedQuotes[0].lossOrDamage > 0 ? `
+                <tr>
+                    <td>Loss/Damage</td>
+                    ${sortedQuotes.map(q => `<td>AED ${q.lossOrDamage.toLocaleString()}</td>`).join('')}
+                </tr>
+                ` : ''}
+                <tr>
+                    <td>Excess</td>
+                    ${sortedQuotes.map(q => `<td>AED ${q.excess.toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr>
+                    <td>Premium</td>
+                    ${sortedQuotes.map(q => `<td>AED ${q.premium.toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr>
+                    <td>VAT (5%)</td>
+                    ${sortedQuotes.map(q => `<td>AED ${q.vat.toLocaleString()}</td>`).join('')}
+                </tr>
+                <tr class="total-row">
+                    <td>Total</td>
+                    ${sortedQuotes.map(q => `<td>AED ${q.total.toLocaleString()}</td>`).join('')}
+                </tr>
+            </tbody>
+        </table>
+        ${selectedComparison.quotes.length > 1 ? `
+        <div class="summary-box">
+            <strong>Best:</strong> ${sortedQuotes[0].company} - AED ${sortedQuotes[0].total.toLocaleString()} | 
+            <strong>Save:</strong> AED ${(sortedQuotes[sortedQuotes.length - 1].total - sortedQuotes[0].total).toLocaleString()}
+        </div>
+        ` : ''}
+        <div class="disclaimer">
+            <h4>Disclaimer</h4>
+            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer's official policy wording and schedule will take precedence over the information provided by us.</p>
+            <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+        </div>
+        <div class="footer-contact">
+            <div class="footer-left">
+                <strong>Suite 2801, One by Omniyat</strong>
+                Al Mustaqbal Street, Business Bay<br>
+                Dubai, U.A.E<br>
+                P O BOX 233640<br>
+                <br>
+                <strong>UAE Central Bank Registration Number : 200</strong>
+            </div>
+            <div class="footer-right">
+                <strong>Call us on +971 47058000</strong>
+                <br>
+                Email us : enquiry@nsib.ae<br>
+                <br>
+                Visit our website: nsib.ae
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `NSIB_Insurance_Comparison_${sortedQuotes[0].make}_${sortedQuotes[0].model}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert('Document downloaded!');
+  };
+
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-US', { 
@@ -992,6 +1139,10 @@ function SavedHistoryPage() {
                 })()}
               </div>
             )}
+
+            <button onClick={generateDocument} className="w-full mt-4 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
+              Generate Document
+            </button>
           </div>
         )}
       </div>
