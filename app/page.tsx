@@ -129,6 +129,10 @@ export default function ComparisonPage() {
     alert('Demo data added successfully!');
   };
 
+  const generateDocument = () => {
+    alert('Document generation feature - This will generate a downloadable HTML/PDF document');
+  };
+
   const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
   const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
 
@@ -140,10 +144,10 @@ export default function ComparisonPage() {
 
         {/* Vehicle Information */}
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <h3 className="font-bold text-sm mb-3">Vehicle Information</h3>
+          <h3 className="font-bold text-sm mb-3 text-gray-800">Vehicle Information</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Make *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Make *</label>
               <select
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 value={formData.vehicleMake}
@@ -156,7 +160,7 @@ export default function ComparisonPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Model *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Model *</label>
               <input
                 type="text"
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
@@ -169,7 +173,7 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Year Model</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Year Model</label>
               <select
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
                 value={formData.yearModel}
@@ -182,7 +186,7 @@ export default function ComparisonPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Vehicle Value</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
               <input
                 type="text"
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
@@ -194,7 +198,7 @@ export default function ComparisonPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold mb-1 text-gray-700">Repair Type</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
             <select
               className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
               value={formData.repairType}
@@ -209,10 +213,10 @@ export default function ComparisonPage() {
 
         {/* Quote Details */}
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <h3 className="font-bold text-sm mb-3">Quote Details</h3>
+          <h3 className="font-bold text-sm mb-3 text-gray-800">Quote Details</h3>
           
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-700">Insurance Company *</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
             <select
               className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
               value={formData.insuranceCompany}
@@ -226,7 +230,7 @@ export default function ComparisonPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-700">Loss or Damage Coverage</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Loss or Damage Coverage</label>
             <input
               type="number"
               className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
@@ -237,10 +241,10 @@ export default function ComparisonPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-700">Coverage Options</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {COVERAGE_OPTIONS.map(option => (
-                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gr
+                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gray-800">
                   <input
                     type="checkbox"
                     checked={selectedCoverage.includes(option.label)}
@@ -254,7 +258,7 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Excess</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
               <input
                 type="number"
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
@@ -264,7 +268,7 @@ export default function ComparisonPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Premium *</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Premium *</label>
               <input
                 type="number"
                 className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
@@ -277,16 +281,16 @@ export default function ComparisonPage() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">VAT (5%)</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
               <input
                 type="number"
-                className="w-full p-2 border rounded text-sm bg-gray-100"
+                className="w-full p-2 border rounded text-sm bg-gray-100 text-gray-900"
                 value={vat}
                 readOnly
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1 text-gray-700">Total Amount</label>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Total Amount</label>
               <input
                 type="number"
                 className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600"
@@ -353,7 +357,7 @@ export default function ComparisonPage() {
         ) : (
           <>
             <div className="bg-gray-50 p-4 rounded-lg mb-4 text-center border-l-4 border-indigo-600">
-              <h3 className="font-bold text-base mb-1">
+              <h3 className="font-bold text-base mb-1 text-gray-900">
                 Vehicle: {sortedQuotes[0].make} {sortedQuotes[0].model} ({sortedQuotes[0].year})
               </h3>
               <p className="text-sm text-gray-600">
@@ -393,54 +397,55 @@ export default function ComparisonPage() {
                   ))}
                   {sortedQuotes[0].lossOrDamage > 0 && (
                     <tr>
-                      <td className="p-2 border font-bold bg-gray-50">Loss/Damage Coverage</td>
+                      <td className="p-2 border font-bold bg-gray-50 text-gray-900">Loss/Damage Coverage</td>
                       {sortedQuotes.map(q => (
-                        <td key={q.id} className="p-2 border text-center">AED {q.lossOrDamage.toLocaleString()}</td>
+                        <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.lossOrDamage.toLocaleString()}</td>
                       ))}
                     </tr>
                   )}
                   <tr>
-                    <td className="p-2 border font-bold bg-gray-50">Excess</td>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Excess</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center">AED {q.excess.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.excess.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-2 border font-bold bg-gray-50">Premium</td>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Premium</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center">AED {q.premium.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.premium.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-2 border font-bold bg-gray-50">VAT (5%)</td>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">VAT (5%)</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center">AED {q.vat.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.vat.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr className="bg-blue-50">
-                    <td className="p-2 border font-bold">Total Premium</td>
+                    <td className="p-2 border font-bold text-gray-900">Total Premium</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center font-bold">AED {q.total.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center font-bold text-gray-900">AED {q.total.toLocaleString()}</td>
                     ))}
                   </tr>
                 </tbody>
               </table>
             </div>
-		<button
-  onClick={generateDocument}
-  className="w-full mt-4 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition"
->
-  Generate Document
-</button>
 
             {quotes.length > 1 && (
               <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg mt-4 border-l-4 border-green-500">
                 <h4 className="font-bold text-green-800 mb-2">Comparison Summary</h4>
-                <p className="text-sm"><strong>Best Deal:</strong> {sortedQuotes[0].company} - AED {sortedQuotes[0].total.toLocaleString()}</p>
-                <p className="text-sm"><strong>You Save:</strong> AED {(sortedQuotes[sortedQuotes.length-1].total - sortedQuotes[0].total).toLocaleString()} vs highest quote</p>
-                <p className="text-sm"><strong>Companies Compared:</strong> {quotes.length}</p>
+                <p className="text-sm text-gray-900"><strong>Best Deal:</strong> {sortedQuotes[0].company} - AED {sortedQuotes[0].total.toLocaleString()}</p>
+                <p className="text-sm text-gray-900"><strong>You Save:</strong> AED {(sortedQuotes[sortedQuotes.length-1].total - sortedQuotes[0].total).toLocaleString()} vs highest quote</p>
+                <p className="text-sm text-gray-900"><strong>Companies Compared:</strong> {quotes.length}</p>
               </div>
             )}
+
+            <button
+              onClick={generateDocument}
+              className="w-full mt-4 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition"
+            >
+              Generate Document
+            </button>
           </>
         )}
       </div>
