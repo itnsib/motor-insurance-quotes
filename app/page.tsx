@@ -94,25 +94,17 @@ const INSURANCE_COMPANIES = [
 
 const COVERAGE_OPTIONS = [
   { id: 'fireTheft', label: 'Fire and theft cover' },
-  { id: 'thirdPartyLiability', label: 'Third Party Liability (Min. 500,000)' },
   { id: 'naturalCalamities', label: 'Natural Calamities Riot and strike' },
   { id: 'emergencyMedical', label: 'Emergency medical expenses' },
   { id: 'personalBelongings', label: 'Personal belongings' },
-  { id: 'personalAccident', label: 'Personal Accident cover for the driver' },
   { id: 'omanCover', label: 'Oman Cover (Own damage only)' },
-  { id: 'gccCover', label: 'GCC Countries Cover' },
   { id: 'offroadCover', label: 'Off-road cover (For 4x4 only)' },
   { id: 'accidentRecovery', label: '24 Hour Accident and Breakdown Recovery' },
   { id: 'ambulanceCover', label: 'Ambulance Cover' },
-  { id: 'keyCover', label: 'Key Replacement Cover' },
   { id: 'windscreenDamage', label: 'Excess for windscreen damage' },
-  { id: 'agencyRepair', label: 'Agency Repair' },
-  { id: 'rentalCar', label: 'Rental Car during repairs' },
-  { id: 'roadAssistance', label: 'Roadside Assistance' },
   { id: 'driverCover', label: 'Optional Covers Driver Cover' },
   { id: 'passengersCover', label: 'Passengers Cover' },
-  { id: 'hirecarBenefit', label: 'Hire car Benefit' },
-  { id: 'geographicExtension', label: 'Geographic Extension' }
+  { id: 'hirecarBenefit', label: 'Hire car Benefit' }
 ];
 
 const getCoverageDefaults = (company: string): string[] => {
@@ -945,29 +937,29 @@ function SavedHistoryPage() {
                   <div key={quote.id} className={`p-4 rounded-lg border-2 ${isBest ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        {isBest && <div className="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded mb-1">BEST PRICE</div>}
-                        <div className="font-bold text-indigo-600">{quote.company}</div>
-                        <div className="text-sm text-gray-600">{quote.make} {quote.model} ({quote.year})</div>
+                        {isBest && <div className="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded mb-1 font-bold">BEST PRICE</div>}
+                        <div className="font-bold text-indigo-600 text-base">{quote.company}</div>
+                        <div className="text-sm text-gray-700">{quote.make} {quote.model} ({quote.year})</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xl font-bold text-gray-900">AED {quote.total.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">Premium: {quote.premium.toLocaleString()} + VAT: {quote.vat.toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-gray-900">AED {quote.total.toLocaleString()}</div>
+                        <div className="text-xs text-gray-600">Premium: {quote.premium.toLocaleString()} + VAT: {quote.vat.toLocaleString()}</div>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                      <div><span className="font-bold">Value:</span> {quote.value}</div>
-                      <div><span className="font-bold">Repair:</span> {quote.repairType}</div>
-                      <div><span className="font-bold">Excess:</span> AED {quote.excess.toLocaleString()}</div>
-                      {quote.lossOrDamage > 0 && <div><span className="font-bold">Coverage:</span> AED {quote.lossOrDamage.toLocaleString()}</div>}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-3 text-gray-700">
+                      <div><span className="font-bold text-gray-800">Value:</span> {quote.value}</div>
+                      <div><span className="font-bold text-gray-800">Repair:</span> {quote.repairType}</div>
+                      <div><span className="font-bold text-gray-800">Excess:</span> AED {quote.excess.toLocaleString()}</div>
+                      {quote.lossOrDamage > 0 && <div><span className="font-bold text-gray-800">Coverage:</span> AED {quote.lossOrDamage.toLocaleString()}</div>}
                     </div>
 
                     {quote.coverageOptions.length > 0 && (
                       <div className="mb-3">
-                        <div className="text-xs font-bold mb-1">Coverage Options:</div>
+                        <div className="text-xs font-bold mb-1 text-gray-800">Coverage Options:</div>
                         <div className="flex flex-wrap gap-1">
                           {quote.coverageOptions.map((opt, i) => (
-                            <span key={i} className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded">{opt}</span>
+                            <span key={i} className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded font-medium">{opt}</span>
                           ))}
                         </div>
                       </div>
