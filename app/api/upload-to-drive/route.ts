@@ -6,12 +6,18 @@ export async function POST(request: NextRequest) {
   try {
     const { fileName, htmlContent } = await request.json();
 
-    // Build credentials from separate environment variables
+    // Format private key with proper line breaks (64 chars per line)
+    const privateKeyBody = process.env.GOOGLE_PRIVATE_KEY || '';
+    
+    // Split into 64-character lines
+    const formattedKey = privateKeyBody.match(/.{1,64}/g)?.join('\n') || privateKeyBody;
+    const privateKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----\n`;
+
     const credentials = {
       type: 'service_account',
       project_id: process.env.GOOGLE_PROJECT_ID,
       private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      private_key: privateKey,
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       client_id: process.env.GOOGLE_CLIENT_ID,
       auth_uri: 'https://accounts.google.com/o/oauth2/auth',
