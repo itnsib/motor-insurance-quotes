@@ -6,15 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     const { fileName, htmlContent } = await request.json();
 
-    // Reconstruct the private key with proper formatting
-    const privateKeyBody = process.env.GOOGLE_PRIVATE_KEY || '';
-    const privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKeyBody}\n-----END PRIVATE KEY-----\n`;
-
+    // Build credentials from separate environment variables
     const credentials = {
       type: 'service_account',
       project_id: process.env.GOOGLE_PROJECT_ID,
       private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: privateKey,
+      private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       client_id: process.env.GOOGLE_CLIENT_ID,
       auth_uri: 'https://accounts.google.com/o/oauth2/auth',
