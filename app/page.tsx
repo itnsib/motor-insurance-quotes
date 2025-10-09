@@ -3,34 +3,6 @@
 
 import { useState, useEffect } from 'react';
 
-declare global {
-  interface Window {
-    gapi: {
-      load: (api: string, callback: () => void) => void;
-      client: {
-        init: (config: { apiKey: string; discoveryDocs: string[] }) => Promise<void>;
-        drive: {
-          files: {
-            list: (params: { q: string; fields: string }) => Promise<{ result: { files?: { id: string; name: string }[] } }>;
-            create: (params: { resource: { name: string; mimeType: string }; fields: string }) => Promise<{ result: { id: string } }>;
-          };
-        };
-        getToken: () => { access_token: string };
-      };
-    };
-    google: {
-      accounts: {
-        oauth2: {
-          initTokenClient: (config: { client_id: string; scope: string; callback: string | ((response: { error?: string; access_token?: string }) => void) }) => {
-            callback: (response: { error?: string; access_token?: string }) => void;
-            requestAccessToken: (options: { prompt: string }) => void;
-          };
-        };
-      };
-    };
-  }
-}
-
 // ============ TYPES ============
 interface Quote {
   id: string;
@@ -194,138 +166,29 @@ const generateReferenceNumber = (): string => {
   return `${last4}${random2}`;
 };
 
-// Google Drive Integration
-const FOLDER_NAME = 'Motor Insurance Comparison Documents';
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
-let gapiInitialized = false;
-let tokenClient: { callback: (response: { error?: string; access_token?: string }) => void; requestAccessToken: (options: { prompt: string }) => void } | null = null;
-
-const initializeGoogleDrive = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (gapiInitialized) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      window.gapi.load('client', async () => {
-        try {
-          await window.gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-          });
-          
-          const gisScript = document.createElement('script');
-          gisScript.src = 'https://accounts.google.com/gsi/client';
-          gisScript.async = true;
-          gisScript.defer = true;
-          gisScript.onload = () => {
-            tokenClient = window.google.accounts.oauth2.initTokenClient({
-              client_id: CLIENT_ID,
-              scope: SCOPES,
-              callback: '',
-            });
-            gapiInitialized = true;
-            resolve();
-          };
-          document.body.appendChild(gisScript);
-        } catch (error) {
-          reject(error);
-        }
-      });
-    };
-    script.onerror = reject;
-    document.body.appendChild(script);
-  });
-};
-
-const authenticateGoogleDrive = (): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    if (!tokenClient) {
-      reject(new Error('Google API not initialized'));
-      return;
-    }
-
-    tokenClient.callback = (response) => {
-      if (response.error) {
-        reject(response);
-        return;
-      }
-      resolve(response.access_token || '');
-    };
-
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  });
-};
-
-const getOrCreateFolder = async (folderName: string): Promise<string> => {
-  try {
-    const response = await window.gapi.client.drive.files.list({
-      q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`,
-      fields: 'files(id, name)',
-    });
-
-    if (response.result.files && response.result.files.length > 0) {
-      return response.result.files[0].id;
-    }
-
-    const folderMetadata = {
-      name: folderName,
-      mimeType: 'application/vnd.google-apps.folder',
-    };
-
-    const folder = await window.gapi.client.drive.files.create({
-      resource: folderMetadata,
-      fields: 'id',
-    });
-
-    return folder.result.id;
-  } catch (error) {
-    console.error('Error creating/finding folder:', error);
-    throw error;
-  }
-};
-
+// ============ GOOGLE DRIVE UPLOAD (NEW SIMPLE VERSION) ============
 const uploadToGoogleDrive = async (fileName: string, htmlContent: string): Promise<string> => {
   try {
-    await initializeGoogleDrive();
-    await authenticateGoogleDrive();
-
-    const folderId = await getOrCreateFolder(FOLDER_NAME);
-
-    const file = new Blob([htmlContent], { type: 'text/html' });
-    const metadata = {
-      name: fileName,
-      mimeType: 'text/html',
-      parents: [folderId],
-    };
-
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', file);
-
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const response = await fetch('/api/upload-to-drive', {
       method: 'POST',
-      headers: new Headers({ Authorization: 'Bearer ' + window.gapi.client.getToken().access_token }),
-      body: form,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName, htmlContent }),
     });
 
     const result = await response.json();
-    return result.id;
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    return result.fileId;
   } catch (error) {
     console.error('Error uploading to Google Drive:', error);
     throw error;
   }
 };
 
+// ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -475,6 +338,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
 </html>`;
 }
 
+// ============ MAIN COMPONENT ============
 function QuoteGeneratorPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [formData, setFormData] = useState({
@@ -618,8 +482,19 @@ function QuoteGeneratorPage() {
 
     try {
       const referenceNumber = generateReferenceNumber();
-      const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+      const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
+      const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
       
+      const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
+      const fileName = `NSIB_${quotes[0].customerName}_${quotes[0].make}_${quotes[0].model}_${referenceNumber}.html`;
+      
+      alert('Uploading to your 5TB Google Drive...');
+      
+      // Upload to Google Drive
+      const fileId = await uploadToGoogleDrive(fileName, htmlContent);
+      
+      // Save to local history
+      const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
       const newComparison: SavedComparison = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
@@ -628,23 +503,13 @@ function QuoteGeneratorPage() {
         advisorComment: advisorComment,
         referenceNumber: referenceNumber,
       };
-
       savedHistory.unshift(newComparison);
       localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
       
-      const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
-      const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
-      
-      const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
-      const fileName = `NSIB_${quotes[0].customerName}_${quotes[0].make}_${quotes[0].model}_${referenceNumber}.html`;
-      
-      alert('Uploading to Google Drive... Please sign in if prompted.');
-      await uploadToGoogleDrive(fileName, htmlContent);
-      
-      alert(`✅ Success!\n\n📁 Saved to Google Drive folder: "${FOLDER_NAME}"\n📄 File: ${fileName}\n\nYou can view it in the History tab.`);
+      alert(`✅ Success!\n\n📁 Saved to YOUR 5TB Google Drive\n📂 Folder: Motor Insurance Comparison Documents\n📄 File: ${fileName}\n\nFile ID: ${fileId}\n\nAll team members can access this file!`);
     } catch (error) {
-      console.error('Error saving to history:', error);
-      alert('⚠️ Saved locally but failed to upload to Google Drive. Please try again or check your Google account permissions.');
+      console.error('Error saving:', error);
+      alert('⚠️ Upload failed. Check browser console for details.');
     }
   };
 
@@ -865,7 +730,7 @@ function QuoteGeneratorPage() {
               💾 Save to History & Google Drive
             </button>
             <button onClick={generateDocument} className="w-full bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 transition">
-              Generate Document
+              📥 Download Document
             </button>
           </div>
         )}
