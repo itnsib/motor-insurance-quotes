@@ -5,8 +5,29 @@ import { useState, useEffect } from 'react';
 
 declare global {
   interface Window {
-    gapi: any;
-    google: any;
+    gapi: {
+      load: (api: string, callback: () => void) => void;
+      client: {
+        init: (config: { apiKey: string; discoveryDocs: string[] }) => Promise<void>;
+        drive: {
+          files: {
+            list: (params: { q: string; fields: string }) => Promise<{ result: { files?: { id: string; name: string }[] } }>;
+            create: (params: { resource: { name: string; mimeType: string }; fields: string }) => Promise<{ result: { id: string } }>;
+          };
+        };
+        getToken: () => { access_token: string };
+      };
+    };
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: { client_id: string; scope: string; callback: string | ((response: { error?: string; access_token?: string }) => void) }) => {
+            callback: (response: { error?: string; access_token?: string }) => void;
+            requestAccessToken: (options: { prompt: string }) => void;
+          };
+        };
+      };
+    };
   }
 }
 
@@ -166,7 +187,6 @@ const calculateVAT = (premium: number): { vat: number; total: number } => {
   return { vat, total: premium + vat };
 };
 
-// Generate unique 6-digit reference number using timestamp + random
 const generateReferenceNumber = (): string => {
   const timestamp = Date.now();
   const last4 = timestamp.toString().slice(-4);
@@ -182,7 +202,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let gapiInitialized = false;
-let tokenClient: any = null;
+let tokenClient: { callback: (response: { error?: string; access_token?: string }) => void; requestAccessToken: (options: { prompt: string }) => void } | null = null;
 
 const initializeGoogleDrive = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -234,12 +254,12 @@ const authenticateGoogleDrive = (): Promise<string> => {
       return;
     }
 
-    tokenClient.callback = (response: any) => {
+    tokenClient.callback = (response) => {
       if (response.error) {
         reject(response);
         return;
       }
-      resolve(response.access_token);
+      resolve(response.access_token || '');
     };
 
     tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -306,7 +326,6 @@ const uploadToGoogleDrive = async (fileName: string, htmlContent: string): Promi
   }
 };
 
-// Helper function to generate HTML content
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -431,7 +450,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         ` : ''}
         <div class="disclaimer">
             <h4>Disclaimer</h4>
-            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer's official policy wording and schedule will take precedence over the information provided by us.</p>
+            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
             <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
         </div>
         <div class="footer-contact">
@@ -456,7 +475,6 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
 </html>`;
 }
 
-// ============ QUOTE GENERATOR PAGE ============
 function QuoteGeneratorPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [formData, setFormData] = useState({
@@ -657,20 +675,315 @@ function QuoteGeneratorPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
-      {/* Form Panel - Continue with your existing JSX */}
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-150px)] overflow-y-auto">
-        {/* ... rest of your form code ... */}
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Add Quote</h2>
+
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <h3 className="font-bold text-sm mb-3 text-gray-800">Vehicle Information</h3>
+          
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Customer Name *</label>
+            <input
+              type="text"
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+              placeholder="Enter customer name"
+              value={formData.customerName}
+              onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Make *</label>
+              <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.vehicleMake} onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}>
+                <option value="">Select Make</option>
+                {VEHICLE_MAKES.map(make => (
+                  <option key={make} value={make}>{make}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Model *</label>
+              <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="e.g., Camry" value={formData.vehicleModel} onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Year Model</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.yearModel} onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}>
+              <option value="">Select Year</option>
+              {YEARS.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg mb-4">
+          <h3 className="font-bold text-sm mb-3 text-gray-800">Quote Details</h3>
+          
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
+            <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="e.g., AED 85,000" value={formData.vehicleValue} onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })} />
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
+              <option value="">Select Type</option>
+              <option value="Agency">Agency</option>
+              <option value="Non-Agency">Non-Agency</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.insuranceCompany} onChange={(e) => handleCompanyChange(e.target.value)}>
+              <option value="">Select Company</option>
+              {INSURANCE_COMPANIES.map(company => (
+                <option key={company} value={company}>{company}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Third Party Property Liability</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.thirdPartyLiability} onChange={(e) => setFormData({ ...formData, thirdPartyLiability: e.target.value })}>
+              {THIRD_PARTY_LIABILITY_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {COVERAGE_OPTIONS.map(option => (
+                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gray-800">
+                  <input type="checkbox" checked={selectedCoverage.includes(option.label)} onChange={() => handleCoverageToggle(option.label)} />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Oman Cover (Own damage only)</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={omanCover} onChange={(e) => setOmanCover(e.target.value)}>
+              {OMAN_COVER_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Excess for Windscreen Damage</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={windscreenExcess} onChange={(e) => setWindscreenExcess(e.target.value)}>
+              {WINDSCREEN_EXCESS_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
+              <input type="number" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="1000" value={formData.excess || ''} onChange={(e) => setFormData({ ...formData, excess: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Premium *</label>
+              <input type="number" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="2500" value={formData.premium || ''} onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
+              <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 text-gray-900" value={vat} readOnly />
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Total Amount</label>
+              <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600" value={total} readOnly />
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+              <input type="checkbox" checked={formData.isBest} onChange={(e) => setFormData({ ...formData, isBest: e.target.checked })} />
+              Mark as Best
+            </label>
+          </div>
+
+          <div className="mb-3">
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+              <input type="checkbox" checked={formData.isRenewal} onChange={(e) => setFormData({ ...formData, isRenewal: e.target.checked })} />
+              Renewal
+            </label>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Advisor Comment</label>
+            <textarea
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+              placeholder="Enter advisor comments for this comparison..."
+              rows={3}
+              value={advisorComment}
+              onChange={(e) => setAdvisorComment(e.target.value)}
+            />
+          </div>
+
+          <button onClick={addQuote} className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition mb-2">
+            Add Quote
+          </button>
+          
+          <button onClick={addDemoData} className="w-full bg-yellow-500 text-gray-900 p-2 rounded-lg font-bold hover:bg-yellow-600 transition">
+            Add Demo Data
+          </button>
+        </div>
+
+        {quotes.length > 0 && (
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h4 className="text-sm font-bold text-green-800 mb-2">Current Comparison ({quotes.length})</h4>
+            <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
+              {quotes.map(quote => (
+                <div key={quote.id} className="bg-white p-2 rounded flex justify-between items-center border-l-4 border-indigo-600">
+                  <div className="flex-1">
+                    <div className="font-bold text-xs text-indigo-600">{quote.company}</div>
+                    <div className="text-xs text-gray-600">
+                      AED {quote.total.toLocaleString()} 
+                      {quote.isBest && ' ⭐'}
+                      {quote.isRenewal && ' 🔄'}
+                    </div>
+                  </div>
+                  <button onClick={() => removeQuote(quote.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button onClick={saveToHistory} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition mb-2">
+              💾 Save to History & Google Drive
+            </button>
+            <button onClick={generateDocument} className="w-full bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 transition">
+              Generate Document
+            </button>
+          </div>
+        )}
       </div>
-      
-      {/* Comparison Panel - Continue with your existing JSX */}
+
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-150px)] overflow-auto">
-        {/* ... rest of your comparison code ... */}
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Live Comparison</h2>
+        
+        {sortedQuotes.length === 0 ? (
+          <div className="text-center text-gray-400 italic py-20">Add quotes to see comparison table</div>
+        ) : (
+          <>
+            <div className="bg-gray-50 p-4 rounded-lg mb-4 text-center border-l-4 border-indigo-600">
+              <h3 className="font-bold text-base mb-1 text-gray-900">Customer: {sortedQuotes[0].customerName}</h3>
+              <h3 className="font-bold text-base mb-1 text-gray-900">Vehicle: {sortedQuotes[0].make} {sortedQuotes[0].model} ({sortedQuotes[0].year})</h3>
+              <p className="text-sm text-gray-600">Repair: {sortedQuotes[0].repairType}</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <th className="bg-indigo-600 text-white p-3 border text-left w-44">BENEFITS</th>
+                    {sortedQuotes.map((q) => (
+                      <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center">
+                        <div className="text-sm mb-1">{q.company.substring(0, 25)}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Vehicle Value</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.value}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Third Party Liability</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.thirdPartyLiability}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Oman Cover</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.omanCover}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Windscreen Excess</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.windscreenExcess}</td>
+                    ))}
+                  </tr>
+                  {allCoverageOptions.map(option => (
+                    <tr key={option}>
+                      <td className="p-2 border font-bold bg-gray-50 text-gray-900">{option}</td>
+                      {sortedQuotes.map(q => {
+                        const included = q.coverageOptions.includes(option);
+                        return (
+                          <td key={q.id} className={`p-2 border text-center font-bold ${included ? 'text-green-600' : 'text-red-600'}`}>
+                            {included ? 'YES' : 'NO'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Excess</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.excess.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Premium</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.premium.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">VAT (5%)</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">AED {q.vat.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr className="bg-blue-50">
+                    <td className="p-2 border font-bold text-gray-900">Total Premium</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center font-bold text-gray-900">AED {q.total.toLocaleString()}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Renewal</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className={`p-2 border text-center font-bold ${q.isRenewal ? 'text-green-600' : ''}`}>
+                        {q.isRenewal ? 'YES' : ''}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Best</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className={`p-2 border text-center font-bold ${q.isBest ? 'text-green-600' : ''}`}>
+                        {q.isBest ? 'YES' : ''}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-// ============ SAVED HISTORY PAGE ============
 function SavedHistoryPage() {
   const [history, setHistory] = useState<SavedComparison[]>([]);
 
@@ -723,11 +1036,11 @@ function SavedHistoryPage() {
     <div className="grid grid-cols-1 gap-5">
       <div className="bg-white rounded-xl p-5 shadow-2xl">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
-        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved to Google Drive folder: <strong>"Motor Insurance Comparison Documents"</strong></p>
+        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved to Google Drive folder: <strong>&quot;Motor Insurance Comparison Documents&quot;</strong></p>
         
         {history.length === 0 ? (
           <div className="text-center text-gray-400 italic py-20">
-            No saved comparisons yet. Create a comparison and click "Save to History" to see it here.
+            No saved comparisons yet. Create a comparison and click &quot;Save to History&quot; to see it here.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -773,7 +1086,6 @@ function SavedHistoryPage() {
   );
 }
 
-// ============ MAIN APP ============
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'generator' | 'history'>('generator');
 
