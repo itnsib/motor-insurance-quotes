@@ -6,8 +6,10 @@ export async function POST(request: NextRequest) {
   try {
     const { fileName, htmlContent } = await request.json();
 
-    // Parse service account credentials
-    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}');
+    // Decode Base64 credentials
+    const credentialsBase64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '';
+    const credentialsJson = Buffer.from(credentialsBase64, 'base64').toString('utf-8');
+    const credentials = JSON.parse(credentialsJson);
 
     // Create auth client
     const auth = new google.auth.GoogleAuth({
@@ -17,7 +19,6 @@ export async function POST(request: NextRequest) {
 
     const drive = google.drive({ version: 'v3', auth });
 
-    // Upload file to Drive
     const fileMetadata = {
       name: fileName,
       parents: [process.env.GOOGLE_DRIVE_FOLDER_ID || ''],
