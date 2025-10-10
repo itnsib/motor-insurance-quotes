@@ -40,3 +40,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local 
+# Service account keys
+service-account-key.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Test files
+test-key.js
+
+# Environment files
+.env.local
+.env*.local
