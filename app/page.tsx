@@ -101,15 +101,15 @@ const INSURANCE_COMPANIES = [
 ];
 
 const THIRD_PARTY_LIABILITY_OPTIONS = [
-  'UPTO 1 Million',
-  'UPTO 1.5 Million',
-  'UPTO 2 Million',
-  'UPTO 2.5 Million',
-  'UPTO 3 Million',
-  'UPTO 3.5 Million',
-  'UPTO 4 Million',
-  'UPTO 4.5 Million',
-  'UPTO 5 Million'
+  'UPTO AED 1 Million',
+  'UPTO AED 1.5 Million',
+  'UPTO AED 2 Million',
+  'UPTO AED 2.5 Million',
+  'UPTO AED 3 Million',
+  'UPTO AED 3.5 Million',
+  'UPTO AED 4 Million',
+  'UPTO AED 4.5 Million',
+  'UPTO AED 5 Million'
 ];
 
 const OMAN_COVER_OPTIONS = [
@@ -119,15 +119,15 @@ const OMAN_COVER_OPTIONS = [
 ];
 
 const WINDSCREEN_EXCESS_OPTIONS = [
-  'UPTO 1000',
-  'UPTO 1500',
-  'UPTO 2000',
-  'UPTO 2500',
-  'UPTO 3000',
-  'UPTO 3500',
-  'UPTO 4000',
-  'UPTO 4500',
-  'UPTO 5000'
+  'UPTO AED 1000',
+  'UPTO AED 1500',
+  'UPTO AED 2000',
+  'UPTO AED 2500',
+  'UPTO AED 3000',
+  'UPTO AED 3500',
+  'UPTO AED 4000',
+  'UPTO AED 4500',
+  'UPTO AED 5000'
 ];
 
 const COVERAGE_OPTIONS = [
@@ -167,9 +167,6 @@ const generateReferenceNumber = (): string => {
   return `${last4}${random2}`;
 };
 
-// Dirham symbol as base64 data URL (you can replace this with the actual image URL)
-const DIRHAM_SYMBOL = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIgZmlsbD0iIzAwMCIvPgo8cGF0aCBkPSJNMTEgN2gydjEwaC0yVjd6TTkgMTBoNnYySDl2LTJ6bTAgM2g2djJIOXYtMnoiIGZpbGw9IiMwMDAiLz4KPC9zdmc+Cg==';
-
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
@@ -207,7 +204,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .not-included { color: #dc3545 !important; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
         .total-row td { color: #000 !important; }
-        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 3mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
         .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 3mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
         .advisor-comment { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 9px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
         .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
@@ -217,7 +214,6 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
         .footer-contact strong { display: block; margin-bottom: 1mm; color: #fff !important; }
-        .dirham { display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 1px; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
@@ -280,19 +276,19 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 `).join('')}
                 <tr class="light-blue-row">
                     <td>Excess</td>
-                    ${sortedQuotes.map(q => `<td><img src="https://i.imgur.com/placeholder-dirham.png" class="dirham" onerror="this.style.display='none'; this.nextSibling.textContent='د.إ ';" alt=""><span>${q.excess.toLocaleString()}</span></td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.excess.toLocaleString()}</td>`).join('')}
                 </tr>
                 <tr class="light-blue-row">
                     <td>Premium</td>
-                    ${sortedQuotes.map(q => `<td><img src="https://i.imgur.com/placeholder-dirham.png" class="dirham" onerror="this.style.display='none'; this.nextSibling.textContent='د.إ ';" alt=""><span>${q.premium.toLocaleString()}</span></td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.premium.toLocaleString()}</td>`).join('')}
                 </tr>
                 <tr class="light-blue-row">
                     <td>VAT (5%)</td>
-                    ${sortedQuotes.map(q => `<td><img src="https://i.imgur.com/placeholder-dirham.png" class="dirham" onerror="this.style.display='none'; this.nextSibling.textContent='د.إ ';" alt=""><span>${q.vat.toLocaleString()}</span></td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.vat.toLocaleString()}</td>`).join('')}
                 </tr>
                 <tr class="light-blue-row total-row">
                     <td>Total</td>
-                    ${sortedQuotes.map(q => `<td><img src="https://i.imgur.com/placeholder-dirham.png" class="dirham" onerror="this.style.display='none'; this.nextSibling.textContent='د.إ ';" alt=""><span>${q.total.toLocaleString()}</span></td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.total.toLocaleString()}</td>`).join('')}
                 </tr>
             </tbody>
         </table>
@@ -387,7 +383,7 @@ function QuoteGeneratorPage() {
     vehicleValue: '',
     repairType: '',
     insuranceCompany: '',
-    thirdPartyLiability: 'UPTO 1 Million',
+    thirdPartyLiability: 'UPTO AED 1 Million',
     excess: 0,
     premium: 0,
     isRecommended: false,
@@ -395,7 +391,7 @@ function QuoteGeneratorPage() {
   });
   const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
   const [omanCover, setOmanCover] = useState('No');
-  const [windscreenExcess, setWindscreenExcess] = useState('UPTO 1000');
+  const [windscreenExcess, setWindscreenExcess] = useState('UPTO AED 1000');
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
   const [advisorComment, setAdvisorComment] = useState('');
@@ -463,7 +459,7 @@ function QuoteGeneratorPage() {
     setFormData({
       ...formData,
       insuranceCompany: '',
-      thirdPartyLiability: 'UPTO 1 Million',
+      thirdPartyLiability: 'UPTO AED 1 Million',
       excess: 0,
       premium: 0,
       isRecommended: false,
@@ -471,7 +467,7 @@ function QuoteGeneratorPage() {
     });
     setSelectedCoverage([]);
     setOmanCover('No');
-    setWindscreenExcess('UPTO 1000');
+    setWindscreenExcess('UPTO AED 1000');
     setVat(0);
     setTotal(0);
   };
@@ -496,10 +492,10 @@ function QuoteGeneratorPage() {
         value: 'AED 85,000',
         repairType: 'Agency',
         company: data.company,
-        thirdPartyLiability: 'UPTO 1 Million',
+        thirdPartyLiability: 'UPTO AED 1 Million',
         coverageOptions: getCoverageDefaults(data.company),
         omanCover: 'Yes',
-        windscreenExcess: 'UPTO 1000',
+        windscreenExcess: 'UPTO AED 1000',
         excess: data.excess,
         premium: data.premium,
         vat: demoVat,
@@ -751,7 +747,7 @@ function QuoteGeneratorPage() {
                   <div className="flex-1">
                     <div className="font-bold text-xs text-indigo-600">{quote.company}</div>
                     <div className="text-xs text-gray-600">
-                      د.إ {quote.total.toLocaleString()} 
+                      AED {quote.total.toLocaleString()} 
                       {quote.isRecommended && ' ⭐'}
                       {quote.isRenewal && ' 🔄'}
                     </div>
@@ -850,25 +846,25 @@ function QuoteGeneratorPage() {
                   <tr className="bg-blue-100">
                     <td className="p-2 border font-bold bg-gray-50 text-gray-900">Excess</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">د.إ {q.excess.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.excess.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr className="bg-blue-100">
                     <td className="p-2 border font-bold bg-gray-50 text-gray-900">Premium</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">د.إ {q.premium.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.premium.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr className="bg-blue-100">
                     <td className="p-2 border font-bold bg-gray-50 text-gray-900">VAT (5%)</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">د.إ {q.vat.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.vat.toLocaleString()}</td>
                     ))}
                   </tr>
                   <tr className="bg-blue-100">
                     <td className="p-2 border font-bold text-gray-900 bg-gray-50">Total Premium</td>
                     {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center font-bold text-gray-900 bg-blue-100">د.إ {q.total.toLocaleString()}</td>
+                      <td key={q.id} className="p-2 border text-center font-bold text-gray-900 bg-blue-100">AED {q.total.toLocaleString()}</td>
                     ))}
                   </tr>
                 </tbody>
@@ -881,4 +877,393 @@ function QuoteGeneratorPage() {
   );
 }
 
-// Continue with SavedHistoryPage component - I'll provide that in the next part due to length
+function SavedHistoryPage() {
+  const [history, setHistory] = useState<SavedComparison[]>([]);
+  const [editingComparison, setEditingComparison] = useState<SavedComparison | null>(null);
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = () => {
+    const saved = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+    setHistory(saved);
+  };
+
+  const deleteComparison = (id: string) => {
+    if (!confirm('Delete this comparison? This cannot be undone.')) return;
+    
+    const updated = history.filter(h => h.id !== id);
+    localStorage.setItem('quotesHistory', JSON.stringify(updated));
+    setHistory(updated);
+  };
+
+  const startEdit = (comparison: SavedComparison) => {
+    setEditingComparison({ ...comparison });
+  };
+
+  const cancelEdit = () => {
+    setEditingComparison(null);
+  };
+
+  const downloadComparison = (comparison: SavedComparison) => {
+    const sortedQuotes = [...comparison.quotes].sort((a, b) => a.total - b.total);
+    const allCoverageOptions = [...new Set(comparison.quotes.flatMap(q => q.coverageOptions))];
+    
+    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, comparison.referenceNumber, comparison.advisorComment || '');
+    const fileName = `NSIB_${comparison.quotes[0].customerName.replace(/\s/g, '_')}_${comparison.quotes[0].make}_${comparison.quotes[0].model}_${comparison.referenceNumber}.html`;
+    
+    downloadHTMLFile(htmlContent, fileName);
+    alert(`✅ Downloaded: ${fileName}`);
+  };
+
+  const saveEdit = async () => {
+    if (!editingComparison) return;
+
+    alert('Saving changes and re-uploading to Vercel Blob...');
+
+    const updated = history.map(h => 
+      h.id === editingComparison.id ? editingComparison : h
+    );
+    localStorage.setItem('quotesHistory', JSON.stringify(updated));
+    setHistory(updated);
+
+    try {
+      const sortedQuotes = [...editingComparison.quotes].sort((a, b) => a.total - b.total);
+      const allCoverageOptions = [...new Set(editingComparison.quotes.flatMap(q => q.coverageOptions))];
+      
+      const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, editingComparison.referenceNumber, editingComparison.advisorComment || '');
+      
+      const timestamp = Date.now();
+      const fileName = `NSIB_${editingComparison.quotes[0].customerName.replace(/\s/g, '_')}_${editingComparison.quotes[0].make}_${editingComparison.quotes[0].model}_${editingComparison.referenceNumber}_UPDATED_${timestamp}.html`;
+      
+      console.log('Uploading to Vercel Blob:', fileName);
+      
+      const response = await fetch('/api/upload-to-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName, htmlContent }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Vercel Blob upload result:', result);
+
+      if (result.success && result.webViewLink) {
+        const updatedComparison = { ...editingComparison, fileUrl: result.webViewLink };
+        const updatedHistory = history.map(h => 
+          h.id === editingComparison.id ? updatedComparison : h
+        );
+        localStorage.setItem('quotesHistory', JSON.stringify(updatedHistory));
+        setHistory(updatedHistory);
+        setEditingComparison(null);
+        alert(`✅ Changes saved successfully!\n\n🔗 Updated document URL:\n${result.webViewLink}\n\nNote: A new version was created to preserve history.`);
+      } else {
+        throw new Error(result.error || 'Upload failed - no URL returned');
+      }
+    } catch (error) {
+      console.error('Error uploading to Vercel Blob:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`⚠️ Changes saved locally, but failed to update online version.\n\nError: ${errorMessage}\n\n💡 Your changes are saved locally. The old online version is still accessible.`);
+      setEditingComparison(null);
+    }
+  };
+
+  const formatDate = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (editingComparison) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5 overflow-y-auto">
+        <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Comparison</h2>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2 text-gray-800">Advisor Comment</label>
+            <textarea
+              className="w-full p-3 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+              rows={4}
+              value={editingComparison.advisorComment || ''}
+              onChange={(e) => setEditingComparison({ ...editingComparison, advisorComment: e.target.value })}
+            />
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {editingComparison.quotes.map((quote, idx) => (
+                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                  <div className="mb-3">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
+                      value={quote.company}
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
+                      <select
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.repairType}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, repairType: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      >
+                        <option value="Agency">Agency</option>
+                        <option value="Non-Agency">Non-Agency</option>
+                        <option value="Not specified">Not specified</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.value}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, value: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.excess}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, excess: parseFloat(e.target.value) || 0 };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
+                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded border">
+                      {COVERAGE_OPTIONS.map(option => (
+                        <label key={option.id} className="flex items-center gap-2 text-xs text-gray-800 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={quote.coverageOptions.includes(option.label)}
+                            onChange={(e) => {
+                              const newQuotes = [...editingComparison.quotes];
+                              const currentOptions = quote.coverageOptions;
+                              const newOptions = e.target.checked
+                                ? [...currentOptions, option.label]
+                                : currentOptions.filter(o => o !== option.label);
+                              newQuotes[idx] = { ...quote, coverageOptions: newOptions };
+                              setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                            }}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Premium</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.premium}
+                        onChange={(e) => {
+                          const newPremium = parseFloat(e.target.value) || 0;
+                          const { vat, total } = calculateVAT(newPremium);
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, premium: newPremium, vat, total };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
+                        value={quote.vat}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Total</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-indigo-700 bg-indigo-50 font-bold"
+                        value={quote.total}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={quote.isRecommended}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, isRecommended: e.target.checked };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                      Recommended
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={quote.isRenewal}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, isRenewal: e.target.checked };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                      Renewal
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={saveEdit} className="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
+              ✓ Save Changes & Re-upload
+            </button>
+            <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600 transition">
+              ✗ Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-5">
+      <div className="bg-white rounded-xl p-5 shadow-2xl">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
+        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved online with public URLs</p>
+        
+        {history.length === 0 ? (
+          <div className="text-center text-gray-400 italic py-20">
+            No saved comparisons yet. Create a comparison and click &quot;Save and Download&quot; to see it here.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.map(comparison => (
+              <div key={comparison.id} className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-200 hover:border-indigo-400 transition shadow-sm hover:shadow-md">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="font-bold text-lg text-gray-900">{comparison.vehicle}</div>
+                    <div className="text-xs text-gray-500">{formatDate(comparison.date)}</div>
+                    <div className="text-xs text-indigo-600 font-mono">Ref: {comparison.referenceNumber}</div>
+                  </div>
+                </div>
+                
+                <div className="mb-3">
+                  <div className="text-sm text-gray-700 mb-2"><strong>Quotes:</strong> {comparison.quotes.length}</div>
+                  <div className="text-xs text-gray-600">
+                    {comparison.quotes.map(q => (
+                      <div key={q.id} className="truncate">
+                        • {q.company} - AED {q.total.toLocaleString()}
+                        {q.isRenewal && ' 🔄'}
+                        {q.isRecommended && ' ⭐'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {comparison.advisorComment && (
+                  <div className="mb-3 p-2 bg-yellow-50 rounded text-xs text-gray-700 border-l-2 border-yellow-400">
+                    <strong>Comment:</strong> {comparison.advisorComment.substring(0, 100)}{comparison.advisorComment.length > 100 ? '...' : ''}
+                  </div>
+                )}
+                
+                <div className="flex gap-2 flex-wrap">
+                  {comparison.fileUrl && (
+                    <a 
+                      href={comparison.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
+                    >
+                      🔗 View Online
+                    </a>
+                  )}
+                  <button 
+                    onClick={() => downloadComparison(comparison)} 
+                    className="flex-1 bg-purple-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-purple-700 transition"
+                  >
+                    📥 Download
+                  </button>
+                  <button onClick={() => startEdit(comparison)} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
+                    ✏️ Edit
+                  </button>
+                  <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<'generator' | 'history'>('generator');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-5">
+      <div className="max-w-[1600px] mx-auto">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">NSIB Insurance Quote System</h1>
+          
+          <div className="flex justify-center gap-4">
+            <button 
+              onClick={() => setCurrentPage('generator')} 
+              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'generator' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              📝 Quote Generator
+            </button>
+            <button 
+              onClick={() => setCurrentPage('history')} 
+              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              📁 Saved History
+            </button>
+          </div>
+        </div>
+
+        {currentPage === 'generator' ? <QuoteGeneratorPage /> : <SavedHistoryPage />}
+      </div>
+    </div>
+  );
+}
