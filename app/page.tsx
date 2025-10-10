@@ -204,8 +204,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .total-row td { color: #000 !important; }
         .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
         .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
-        .advisor-comment h4 { font-size: 10px; margin-bottom: 1.5mm; color: #856404; }
+        .advisor-comment { background: #e3f2fd; padding: 2.5mm; margin: 2mm 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #2196F3; color: #000; }
+        .advisor-comment h4 { font-size: 10px; margin-bottom: 1.5mm; color: #1565C0; }
         .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 7px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 9px; margin-bottom: 1.5mm; color: #856404; }
         .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 7px; line-height: 1.3; }
