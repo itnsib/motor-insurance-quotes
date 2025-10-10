@@ -949,7 +949,7 @@ function SavedHistoryPage() {
   if (editingComparison) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5 overflow-y-auto">
-        <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8">
+        <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8 max-h-[90vh] overflow-y-auto">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Comparison</h2>
           
           <div className="mb-4">
@@ -964,7 +964,7 @@ function SavedHistoryPage() {
 
           <div className="mb-4">
             <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="space-y-4">
               {editingComparison.quotes.map((quote, idx) => (
                 <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
                   <div className="mb-3">
@@ -1022,9 +1022,60 @@ function SavedHistoryPage() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Third Party Liability</label>
+                      <select
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.thirdPartyLiability}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, thirdPartyLiability: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      >
+                        {THIRD_PARTY_LIABILITY_OPTIONS.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Oman Cover</label>
+                      <select
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.omanCover}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, omanCover: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      >
+                        {OMAN_COVER_OPTIONS.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Windscreen Excess</label>
+                      <select
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.windscreenExcess}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, windscreenExcess: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      >
+                        {WINDSCREEN_EXCESS_OPTIONS.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="mb-3">
                     <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
-                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded border">
+                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded border max-h-48 overflow-y-auto">
                       {COVERAGE_OPTIONS.map(option => (
                         <label key={option.id} className="flex items-center gap-2 text-xs text-gray-800 cursor-pointer">
                           <input
@@ -1081,6 +1132,7 @@ function SavedHistoryPage() {
                       />
                     </div>
                   </div>
+                  
                   <div className="flex gap-3">
                     <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
                       <input
@@ -1112,7 +1164,7 @@ function SavedHistoryPage() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 sticky bottom-0 bg-white pt-4 border-t-2">
             <button onClick={saveEdit} className="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
               ✓ Save Changes & Re-upload
             </button>
