@@ -170,7 +170,7 @@ const generateReferenceNumber = (): string => {
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
-  const rowCount = allCoverageOptions.length + 10; // Updated count to include repair type row
+  const rowCount = allCoverageOptions.length + 10;
   const needsThirdPage = hasComment && rowCount > 12;
 
   return `<!DOCTYPE html>
@@ -266,7 +266,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                         <td>${option}</td>
                         ${sortedQuotes.map(q => {
                             const inc = q.coverageOptions.includes(option);
-                            return `<td class="${inc ? 'included' : 'not-included'}">${inc ? 'YES' : 'NO'}</td>`;
+                            return `<td><span class="${inc ? 'included' : 'not-included'}">${inc ? 'YES' : 'NO'}</span></td>`;
                         }).join('')}
                     </tr>
                 `).join('')}
@@ -288,7 +288,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 </tr>
                 <tr>
                     <td>Best</td>
-                    ${sortedQuotes.map(q => `<td class="${q.isBest ? 'included' : ''}">${q.isBest ? 'YES' : ''}</td>`).join('')}
+                    ${sortedQuotes.map(q => `<td><span class="${q.isBest ? 'included' : ''}">${q.isBest ? 'YES' : ''}</span></td>`).join('')}
                 </tr>
             </tbody>
         </table>
@@ -357,44 +357,6 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     ` : ''}
 </body>
 </html>`;
-}
-
-// ============ PDF GENERATOR ============
-async function generatePDF(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): Promise<void> {
-  const jsPDF = (await import('jspdf')).default;
-  const html2canvas = (await import('html2canvas')).default;
-
-  const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
-  
-  const container = document.createElement('div');
-  container.innerHTML = htmlContent;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.width = '210mm';
-  document.body.appendChild(container);
-
-  try {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pages = container.querySelectorAll('.page1, .page2, .page3');
-    
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i] as HTMLElement;
-      const canvas = await html2canvas(page, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      
-      if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-    }
-    
-    pdf.save(`NSIB_${sortedQuotes[0].customerName}_${sortedQuotes[0].make}_${sortedQuotes[0].model}_${referenceNumber}.pdf`);
-  } finally {
-    document.body.removeChild(container);
-  }
 }
 
 // ============ MAIN COMPONENT ============
@@ -579,18 +541,6 @@ function QuoteGeneratorPage() {
       console.error('Error saving:', error);
       alert('⚠️ Upload failed. Check browser console for details.');
     }
-  };
-
-  const generatePDFDocument = async () => {
-    if (quotes.length === 0) return;
-
-    const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
-    const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
-    const referenceNumber = generateReferenceNumber();
-
-    alert('Generating PDF... This may take a moment.');
-    await generatePDF(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
-    alert('PDF downloaded successfully!');
   };
 
   const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
@@ -784,11 +734,8 @@ function QuoteGeneratorPage() {
                 </div>
               ))}
             </div>
-            <button onClick={saveToHistory} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition mb-2">
+            <button onClick={saveToHistory} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition">
               💾 Save to History & Online Storage
-            </button>
-            <button onClick={generatePDFDocument} className="w-full bg-red-600 text-white p-2 rounded-lg font-bold hover:bg-red-700 transition">
-              📄 Download as PDF
             </button>
           </div>
         )}
@@ -941,12 +888,7 @@ function SavedHistoryPage() {
   const saveEdit = async () => {
     if (!editingComparison) return;
 
-    // Update localStorage
-    const updated = history.map(h => 
-      h.id === editingComparison.id ? editingComparison : h
-    );
-    localStorage.setItem('quotesHistory', JSON.stringify(updated));
-    setHistory(updated);
+    alert('Saving changes and re-uploading...');
 
     // Re-upload to update online version
     try {
@@ -966,18 +908,29 @@ function SavedHistoryPage() {
 
       if (result.success) {
         // Update with new file URL
-        const updatedWithUrl = history.map(h => 
-          h.id === editingComparison.id ? { ...editingComparison, fileUrl: result.webViewLink } : h
+        const updatedComparison = { ...editingComparison, fileUrl: result.webViewLink };
+        const updatedHistory = history.map(h => 
+          h.id === editingComparison.id ? updatedComparison : h
         );
-        localStorage.setItem('quotesHistory', JSON.stringify(updatedWithUrl));
-        setHistory(updatedWithUrl);
+        localStorage.setItem('quotesHistory', JSON.stringify(updatedHistory));
+        setHistory(updatedHistory);
+        setEditingComparison(null);
+        alert('✅ Changes saved and document updated online!');
+      } else {
+        throw new Error(result.error);
       }
     } catch (error) {
       console.error('Error re-uploading:', error);
+      alert('⚠️ Changes saved locally, but failed to update online version.');
+      
+      // Still update localStorage
+      const updated = history.map(h => 
+        h.id === editingComparison.id ? editingComparison : h
+      );
+      localStorage.setItem('quotesHistory', JSON.stringify(updated));
+      setHistory(updated);
+      setEditingComparison(null);
     }
-
-    setEditingComparison(null);
-    alert('Comparison updated successfully!');
   };
 
   const formatDate = (isoString: string) => {
