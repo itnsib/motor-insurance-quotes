@@ -170,8 +170,8 @@ const generateReferenceNumber = (): string => {
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
-  const rowCount = allCoverageOptions.length + 9; // base rows + coverage rows
-  const needsThirdPage = hasComment && rowCount > 12; // If comment exists and table is large
+  const rowCount = allCoverageOptions.length + 9;
+  const needsThirdPage = hasComment && rowCount > 12;
 
   return `<!DOCTYPE html>
 <html>
@@ -181,7 +181,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     <style>
         @page { size: A4; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; font-size: 10px; }
+        body { font-family: Arial; font-size: 10px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
         .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm ${needsThirdPage ? '10mm' : '35mm'} 10mm; page-break-after: ${needsThirdPage ? 'always' : 'auto'}; position: relative; }
@@ -190,25 +190,27 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
         .reference-number { position: absolute; top: 2mm; left: 10mm; font-size: 7px; color: #666; }
-        .section-title { font-size: 16px; font-weight: bold; text-align: center; margin: 3mm 0; }
-        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 10px; }
+        .section-title { font-size: 16px; font-weight: bold; text-align: center; margin: 3mm 0; color: #000; }
+        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 10px; color: #000; }
         .comparison-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 2mm 0; table-layout: fixed; }
         .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2.5mm 2mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        .comparison-table th { background: #1e40af; color: white; font-size: 11px; padding: 3mm 2mm; font-weight: bold; }
+        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 11px; padding: 3mm 2mm; font-weight: bold; }
         .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 40mm; }
-        .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; }
-        .included { color: #28a745; font-weight: bold; }
-        .not-included { color: #dc3545; font-weight: bold; }
+        .comparison-table td { background: #fff; color: #000 !important; }
+        .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; color: #000 !important; }
+        .included { color: #28a745 !important; font-weight: bold; }
+        .not-included { color: #dc3545 !important; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
-        .renewal-badge { background: #ffc107; color: #000; padding: 1mm 2mm; border-radius: 2mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 9px; line-height: 1.4; border-left: 2mm solid #ffc107; }
+        .total-row td { color: #000 !important; }
+        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2mm; border-radius: 2mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .advisor-comment { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 9px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
         .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
-        .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; }
+        .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 10px; margin-bottom: 2mm; color: #856404; }
-        .footer-contact { ${needsThirdPage ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: white; font-size: 9px; line-height: 1.5; }
-        .footer-left, .footer-right { flex: 1; }
+        .footer-contact { ${needsThirdPage ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.5; }
+        .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
-        .footer-contact strong { display: block; margin-bottom: 1mm; }
+        .footer-contact strong { display: block; margin-bottom: 1mm; color: #fff !important; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
@@ -233,7 +235,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     <th>BENEFITS</th>
                     ${sortedQuotes.map((q) => `
                         <th>
-                            <div style="font-size: 9px; margin-bottom: 1mm;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            <div style="font-size: 9px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
                             ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                         </th>
                     `).join('')}
@@ -970,7 +972,7 @@ function SavedHistoryPage() {
           <div className="mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-800">Advisor Comment</label>
             <textarea
-              className="w-full p-3 border rounded text-sm text-gray-900 bg-white"
+              className="w-full p-3 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
               rows={4}
               value={editingComparison.advisorComment || ''}
               onChange={(e) => setEditingComparison({ ...editingComparison, advisorComment: e.target.value })}
@@ -981,22 +983,37 @@ function SavedHistoryPage() {
             <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
             <div className="space-y-4">
               {editingComparison.quotes.map((quote, idx) => (
-                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg">
+                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
                       <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
                       <input
                         type="text"
-                        className="w-full p-2 border rounded text-sm bg-gray-100"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
                         value={quote.company}
                         readOnly
                       />
                     </div>
                     <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.excess}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, excess: parseFloat(e.target.value) || 0 };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
                       <label className="block text-xs font-bold mb-1 text-gray-800">Premium</label>
                       <input
                         type="number"
-                        className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
                         value={quote.premium}
                         onChange={(e) => {
                           const newPremium = parseFloat(e.target.value) || 0;
@@ -1007,13 +1024,11 @@ function SavedHistoryPage() {
                         }}
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
                       <input
                         type="number"
-                        className="w-full p-2 border rounded text-sm bg-gray-100"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
                         value={quote.vat}
                         readOnly
                       />
@@ -1022,26 +1037,13 @@ function SavedHistoryPage() {
                       <label className="block text-xs font-bold mb-1 text-gray-800">Total</label>
                       <input
                         type="number"
-                        className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600"
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-indigo-700 bg-indigo-50 font-bold"
                         value={quote.total}
                         readOnly
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
-                      <input
-                        type="number"
-                        className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
-                        value={quote.excess}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, excess: parseFloat(e.target.value) || 0 };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                    </div>
                   </div>
-                  <div className="flex gap-3 mt-3">
+                  <div className="flex gap-3">
                     <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
                       <input
                         type="checkbox"
