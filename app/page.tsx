@@ -168,10 +168,11 @@ const generateReferenceNumber = (): string => {
 };
 
 // ============ HTML GENERATOR ============
+// ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
   const rowCount = allCoverageOptions.length + 10;
-  const needsThirdPage = hasComment && rowCount > 12;
+  const needsThirdPageForFooter = rowCount > 15; // If too many rows, move footer to page 3
 
   return `<!DOCTYPE html>
 <html>
@@ -184,8 +185,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         body { font-family: Arial; font-size: 10px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
-        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm ${needsThirdPage ? '10mm' : '35mm'} 10mm; page-break-after: ${needsThirdPage ? 'always' : 'auto'}; position: relative; }
-        .page3 { width: 210mm; height: 297mm; padding: 8mm 10mm 35mm 10mm; position: relative; }
+        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm ${needsThirdPageForFooter ? '10mm' : '35mm'} 10mm; page-break-after: ${needsThirdPageForFooter ? 'always' : 'auto'}; position: relative; }
+        .page3 { width: 210mm; height: 297mm; padding: 8mm 10mm 10mm 10mm; position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
         .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
@@ -210,7 +211,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
         .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 10px; margin-bottom: 2mm; color: #856404; }
-        .footer-contact { ${needsThirdPage ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.5; }
+        .footer-contact { ${needsThirdPageForFooter ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.5; }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
         .footer-contact strong { display: block; margin-bottom: 1mm; color: #fff !important; }
@@ -221,7 +222,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     <div class="page1">
         <img src="https://i.imgur.com/qgsax5Y.png" alt="About">
     </div>
-    <div class="${needsThirdPage ? 'page2' : 'page2'}">
+    
+    <div class="page2">
         <div class="reference-number">Ref: ${referenceNumber}</div>
         <div class="header-simple">
             <img src="https://i.imgur.com/GCOPBN1.png" alt="Logo" class="header-logo">
@@ -292,18 +294,21 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 </tr>
             </tbody>
         </table>
-        ${!needsThirdPage && hasComment ? `
+        
+        ${hasComment ? `
         <div class="advisor-comment">
             <h4>Advisor Comment</h4>
             <p>${advisorComment}</p>
         </div>
         ` : ''}
-        ${!needsThirdPage ? `
+        
         <div class="disclaimer">
             <h4>Disclaimer</h4>
             <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
             <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
         </div>
+        
+        ${!needsThirdPageForFooter ? `
         <div class="footer-contact">
             <div class="footer-left">
                 <strong>Suite 2801, One by Omniyat</strong>
@@ -323,19 +328,9 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         </div>
         ` : ''}
     </div>
-    ${needsThirdPage ? `
+    
+    ${needsThirdPageForFooter ? `
     <div class="page3">
-        ${hasComment ? `
-        <div class="advisor-comment">
-            <h4>Advisor Comment</h4>
-            <p>${advisorComment}</p>
-        </div>
-        ` : ''}
-        <div class="disclaimer">
-            <h4>Disclaimer</h4>
-            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
-            <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
-        </div>
         <div class="footer-contact">
             <div class="footer-left">
                 <strong>Suite 2801, One by Omniyat</strong>
