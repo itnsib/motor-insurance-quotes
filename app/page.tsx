@@ -195,6 +195,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .included { color: #28a745; font-weight: bold; }
         .not-included { color: #dc3545; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
+        .renewal-badge { background: #ffc107; color: #000; padding: 1mm 2mm; border-radius: 2mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
         .advisor-comment { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 9px; line-height: 1.4; border-left: 2mm solid #ffc107; }
         .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
         .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; }
@@ -228,6 +229,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     ${sortedQuotes.map((q) => `
                         <th>
                             <div style="font-size: 9px; margin-bottom: 1mm;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                         </th>
                     `).join('')}
                 </tr>
@@ -275,10 +277,6 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     ${sortedQuotes.map(q => `<td>AED ${q.total.toLocaleString()}</td>`).join('')}
                 </tr>
                 <tr>
-                    <td>Renewal</td>
-                    ${sortedQuotes.map(q => `<td class="${q.isRenewal ? 'included' : ''}">${q.isRenewal ? 'YES' : ''}</td>`).join('')}
-                </tr>
-                <tr>
                     <td>Best</td>
                     ${sortedQuotes.map(q => `<td class="${q.isBest ? 'included' : ''}">${q.isBest ? 'YES' : ''}</td>`).join('')}
                 </tr>
@@ -315,6 +313,45 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     </div>
 </body>
 </html>`;
+}
+
+// ============ PDF GENERATOR ============
+async function generatePDF(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): Promise<void> {
+  const jsPDF = (await import('jspdf')).default;
+  const html2canvas = (await import('html2canvas')).default;
+
+  const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
+  
+  // Create temporary container
+  const container = document.createElement('div');
+  container.innerHTML = htmlContent;
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.width = '210mm';
+  document.body.appendChild(container);
+
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pages = container.querySelectorAll('.page1, .page2');
+    
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i] as HTMLElement;
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    }
+    
+    pdf.save(`NSIB_${sortedQuotes[0].customerName}_${sortedQuotes[0].make}_${sortedQuotes[0].model}_${referenceNumber}.pdf`);
+  } finally {
+    document.body.removeChild(container);
+  }
 }
 
 // ============ MAIN COMPONENT ============
@@ -469,7 +506,6 @@ function QuoteGeneratorPage() {
       
       alert('Uploading document...');
       
-      // Upload to storage
       const response = await fetch('/api/upload-to-drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -482,7 +518,6 @@ function QuoteGeneratorPage() {
         throw new Error(result.error);
       }
       
-      // Save to local history
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
       const newComparison: SavedComparison = {
         id: Date.now().toString(),
@@ -503,26 +538,16 @@ function QuoteGeneratorPage() {
     }
   };
 
-  const generateDocument = () => {
+  const generatePDFDocument = async () => {
     if (quotes.length === 0) return;
 
     const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
     const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
     const referenceNumber = generateReferenceNumber();
 
-    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `NSIB_Insurance_Comparison_${sortedQuotes[0].make}_${sortedQuotes[0].model}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    alert('Document downloaded!');
+    alert('Generating PDF... This may take a moment.');
+    await generatePDF(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
+    alert('PDF downloaded successfully!');
   };
 
   const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
@@ -719,8 +744,8 @@ function QuoteGeneratorPage() {
             <button onClick={saveToHistory} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition mb-2">
               💾 Save to History & Online Storage
             </button>
-            <button onClick={generateDocument} className="w-full bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 transition">
-              📥 Download Document
+            <button onClick={generatePDFDocument} className="w-full bg-red-600 text-white p-2 rounded-lg font-bold hover:bg-red-700 transition">
+              📄 Download as PDF
             </button>
           </div>
         )}
@@ -747,6 +772,11 @@ function QuoteGeneratorPage() {
                     {sortedQuotes.map((q) => (
                       <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center">
                         <div className="text-sm mb-1">{q.company.substring(0, 25)}</div>
+                        {q.isRenewal && (
+                          <div className="bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-bold inline-block mt-1">
+                            RENEWAL
+                          </div>
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -814,14 +844,6 @@ function QuoteGeneratorPage() {
                     ))}
                   </tr>
                   <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Renewal</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className={`p-2 border text-center font-bold ${q.isRenewal ? 'text-green-600' : ''}`}>
-                        {q.isRenewal ? 'YES' : ''}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr>
                     <td className="p-2 border font-bold bg-gray-50 text-gray-900">Best</td>
                     {sortedQuotes.map(q => (
                       <td key={q.id} className={`p-2 border text-center font-bold ${q.isBest ? 'text-green-600' : ''}`}>
@@ -841,6 +863,8 @@ function QuoteGeneratorPage() {
 
 function SavedHistoryPage() {
   const [history, setHistory] = useState<SavedComparison[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editComment, setEditComment] = useState('');
 
   useEffect(() => {
     loadHistory();
@@ -859,21 +883,34 @@ function SavedHistoryPage() {
     setHistory(updated);
   };
 
-  const downloadComparison = (comparison: SavedComparison) => {
+  const startEdit = (comparison: SavedComparison) => {
+    setEditingId(comparison.id);
+    setEditComment(comparison.advisorComment || '');
+  };
+
+  const saveEdit = (id: string) => {
+    const updated = history.map(h => 
+      h.id === id ? { ...h, advisorComment: editComment } : h
+    );
+    localStorage.setItem('quotesHistory', JSON.stringify(updated));
+    setHistory(updated);
+    setEditingId(null);
+    setEditComment('');
+    alert('Comment updated successfully!');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditComment('');
+  };
+
+  const downloadPDF = async (comparison: SavedComparison) => {
     const sortedQuotes = [...comparison.quotes].sort((a, b) => a.total - b.total);
     const allCoverageOptions = [...new Set(comparison.quotes.flatMap(q => q.coverageOptions))];
     
-    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, comparison.referenceNumber, comparison.advisorComment || '');
-    
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `NSIB_${comparison.vehicle.replace(/ /g, '_')}_${comparison.referenceNumber}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    alert('Generating PDF... This may take a moment.');
+    await generatePDF(sortedQuotes, allCoverageOptions, comparison.referenceNumber, comparison.advisorComment || '');
+    alert('PDF downloaded successfully!');
   };
 
   const formatDate = (isoString: string) => {
@@ -918,13 +955,31 @@ function SavedHistoryPage() {
                   </div>
                 </div>
 
-                {comparison.advisorComment && (
-                  <div className="mb-3 p-2 bg-yellow-50 rounded text-xs text-gray-700 border-l-2 border-yellow-400">
-                    <strong>Comment:</strong> {comparison.advisorComment.substring(0, 100)}...
+                {editingId === comparison.id ? (
+                  <div className="mb-3 p-2 bg-blue-50 rounded border-l-2 border-blue-400">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Edit Comment</label>
+                    <textarea
+                      className="w-full p-2 border rounded text-xs text-gray-900 bg-white"
+                      rows={3}
+                      value={editComment}
+                      onChange={(e) => setEditComment(e.target.value)}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => saveEdit(comparison.id)} className="flex-1 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold hover:bg-green-700">
+                        ✓ Save
+                      </button>
+                      <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-gray-600">
+                        ✗ Cancel
+                      </button>
+                    </div>
                   </div>
-                )}
+                ) : comparison.advisorComment ? (
+                  <div className="mb-3 p-2 bg-yellow-50 rounded text-xs text-gray-700 border-l-2 border-yellow-400">
+                    <strong>Comment:</strong> {comparison.advisorComment.substring(0, 100)}{comparison.advisorComment.length > 100 ? '...' : ''}
+                  </div>
+                ) : null}
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {comparison.fileUrl && (
                     <a 
                       href={comparison.fileUrl} 
@@ -932,13 +987,16 @@ function SavedHistoryPage() {
                       rel="noopener noreferrer"
                       className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
                     >
-                      🔗 View Online
+                      🔗 View
                     </a>
                   )}
-                  <button onClick={() => downloadComparison(comparison)} className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-green-700 transition">
-                    📥 Download
+                  <button onClick={() => downloadPDF(comparison)} className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
+                    📄 PDF
                   </button>
-                  <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
+                  <button onClick={() => startEdit(comparison)} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
+                    ✏️
+                  </button>
+                  <button onClick={() => deleteComparison(comparison.id)} className="bg-gray-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-gray-700 transition">
                     🗑️
                   </button>
                 </div>
