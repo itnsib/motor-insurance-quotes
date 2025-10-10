@@ -169,6 +169,10 @@ const generateReferenceNumber = (): string => {
 
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
+  const hasComment = advisorComment && advisorComment.trim().length > 0;
+  const rowCount = allCoverageOptions.length + 9; // base rows + coverage rows
+  const needsThirdPage = hasComment && rowCount > 12; // If comment exists and table is large
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -180,7 +184,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         body { font-family: Arial; font-size: 10px; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
-        .page2 { width: 210mm; height: 297mm; padding: 8mm 10mm 35mm 10mm; page-break-after: always; position: relative; }
+        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm ${needsThirdPage ? '10mm' : '35mm'} 10mm; page-break-after: ${needsThirdPage ? 'always' : 'auto'}; position: relative; }
+        .page3 { width: 210mm; height: 297mm; padding: 8mm 10mm 35mm 10mm; position: relative; }
         .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
@@ -200,7 +205,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
         .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; }
         .disclaimer h4 { font-size: 10px; margin-bottom: 2mm; color: #856404; }
-        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: white; font-size: 9px; line-height: 1.5; }
+        .footer-contact { ${needsThirdPage ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: white; font-size: 9px; line-height: 1.5; }
         .footer-left, .footer-right { flex: 1; }
         .footer-right { text-align: right; }
         .footer-contact strong { display: block; margin-bottom: 1mm; }
@@ -211,7 +216,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     <div class="page1">
         <img src="https://i.imgur.com/qgsax5Y.png" alt="About">
     </div>
-    <div class="page2">
+    <div class="${needsThirdPage ? 'page2' : 'page2'}">
         <div class="reference-number">Ref: ${referenceNumber}</div>
         <div class="header-simple">
             <img src="https://i.imgur.com/GCOPBN1.png" alt="Logo" class="header-logo">
@@ -282,7 +287,40 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 </tr>
             </tbody>
         </table>
-        ${advisorComment ? `
+        ${!needsThirdPage && hasComment ? `
+        <div class="advisor-comment">
+            <h4>Advisor Comment</h4>
+            <p>${advisorComment}</p>
+        </div>
+        ` : ''}
+        ${!needsThirdPage ? `
+        <div class="disclaimer">
+            <h4>Disclaimer</h4>
+            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
+            <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+        </div>
+        <div class="footer-contact">
+            <div class="footer-left">
+                <strong>Suite 2801, One by Omniyat</strong>
+                Al Mustaqbal Street, Business Bay<br>
+                Dubai, U.A.E<br>
+                P O BOX 233640<br>
+                <br>
+                <strong>UAE Central Bank Registration Number : 200</strong>
+            </div>
+            <div class="footer-right">
+                <strong>Call us on +971 47058000</strong>
+                <br>
+                Email us : enquiry@nsib.ae<br>
+                <br>
+                Visit our website: nsib.ae
+            </div>
+        </div>
+        ` : ''}
+    </div>
+    ${needsThirdPage ? `
+    <div class="page3">
+        ${hasComment ? `
         <div class="advisor-comment">
             <h4>Advisor Comment</h4>
             <p>${advisorComment}</p>
@@ -311,6 +349,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
             </div>
         </div>
     </div>
+    ` : ''}
 </body>
 </html>`;
 }
@@ -322,7 +361,6 @@ async function generatePDF(sortedQuotes: Quote[], allCoverageOptions: string[], 
 
   const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
   
-  // Create temporary container
   const container = document.createElement('div');
   container.innerHTML = htmlContent;
   container.style.position = 'absolute';
@@ -332,7 +370,7 @@ async function generatePDF(sortedQuotes: Quote[], allCoverageOptions: string[], 
 
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pages = container.querySelectorAll('.page1, .page2');
+    const pages = container.querySelectorAll('.page1, .page2, .page3');
     
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i] as HTMLElement;
@@ -863,8 +901,7 @@ function QuoteGeneratorPage() {
 
 function SavedHistoryPage() {
   const [history, setHistory] = useState<SavedComparison[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editComment, setEditComment] = useState('');
+  const [editingComparison, setEditingComparison] = useState<SavedComparison | null>(null);
 
   useEffect(() => {
     loadHistory();
@@ -884,24 +921,23 @@ function SavedHistoryPage() {
   };
 
   const startEdit = (comparison: SavedComparison) => {
-    setEditingId(comparison.id);
-    setEditComment(comparison.advisorComment || '');
-  };
-
-  const saveEdit = (id: string) => {
-    const updated = history.map(h => 
-      h.id === id ? { ...h, advisorComment: editComment } : h
-    );
-    localStorage.setItem('quotesHistory', JSON.stringify(updated));
-    setHistory(updated);
-    setEditingId(null);
-    setEditComment('');
-    alert('Comment updated successfully!');
+    setEditingComparison({ ...comparison });
   };
 
   const cancelEdit = () => {
-    setEditingId(null);
-    setEditComment('');
+    setEditingComparison(null);
+  };
+
+  const saveEdit = () => {
+    if (!editingComparison) return;
+
+    const updated = history.map(h => 
+      h.id === editingComparison.id ? editingComparison : h
+    );
+    localStorage.setItem('quotesHistory', JSON.stringify(updated));
+    setHistory(updated);
+    setEditingComparison(null);
+    alert('Comparison updated successfully!');
   };
 
   const downloadPDF = async (comparison: SavedComparison) => {
@@ -923,6 +959,131 @@ function SavedHistoryPage() {
       minute: '2-digit'
     });
   };
+
+  // Edit Modal
+  if (editingComparison) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5">
+        <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Comparison</h2>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2 text-gray-800">Advisor Comment</label>
+            <textarea
+              className="w-full p-3 border rounded text-sm text-gray-900 bg-white"
+              rows={4}
+              value={editingComparison.advisorComment || ''}
+              onChange={(e) => setEditingComparison({ ...editingComparison, advisorComment: e.target.value })}
+            />
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
+            <div className="space-y-4">
+              {editingComparison.quotes.map((quote, idx) => (
+                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded text-sm bg-gray-100"
+                        value={quote.company}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Premium</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+                        value={quote.premium}
+                        onChange={(e) => {
+                          const newPremium = parseFloat(e.target.value) || 0;
+                          const { vat, total } = calculateVAT(newPremium);
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, premium: newPremium, vat, total };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded text-sm bg-gray-100"
+                        value={quote.vat}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Total</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600"
+                        value={quote.total}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+                        value={quote.excess}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, excess: parseFloat(e.target.value) || 0 };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-3">
+                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={quote.isBest}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, isBest: e.target.checked };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                      Best
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={quote.isRenewal}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, isRenewal: e.target.checked };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      />
+                      Renewal
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={saveEdit} className="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
+              ✓ Save Changes
+            </button>
+            <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600 transition">
+              ✗ Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -950,34 +1111,20 @@ function SavedHistoryPage() {
                   <div className="text-sm text-gray-700 mb-2"><strong>Quotes:</strong> {comparison.quotes.length}</div>
                   <div className="text-xs text-gray-600">
                     {comparison.quotes.map(q => (
-                      <div key={q.id} className="truncate">• {q.company}</div>
+                      <div key={q.id} className="truncate">
+                        • {q.company} - AED {q.total.toLocaleString()}
+                        {q.isRenewal && ' 🔄'}
+                        {q.isBest && ' ⭐'}
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                {editingId === comparison.id ? (
-                  <div className="mb-3 p-2 bg-blue-50 rounded border-l-2 border-blue-400">
-                    <label className="block text-xs font-bold mb-1 text-gray-800">Edit Comment</label>
-                    <textarea
-                      className="w-full p-2 border rounded text-xs text-gray-900 bg-white"
-                      rows={3}
-                      value={editComment}
-                      onChange={(e) => setEditComment(e.target.value)}
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button onClick={() => saveEdit(comparison.id)} className="flex-1 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold hover:bg-green-700">
-                        ✓ Save
-                      </button>
-                      <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-gray-600">
-                        ✗ Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : comparison.advisorComment ? (
+                {comparison.advisorComment && (
                   <div className="mb-3 p-2 bg-yellow-50 rounded text-xs text-gray-700 border-l-2 border-yellow-400">
                     <strong>Comment:</strong> {comparison.advisorComment.substring(0, 100)}{comparison.advisorComment.length > 100 ? '...' : ''}
                   </div>
-                ) : null}
+                )}
                 
                 <div className="flex gap-2 flex-wrap">
                   {comparison.fileUrl && (
@@ -994,7 +1141,7 @@ function SavedHistoryPage() {
                     📄 PDF
                   </button>
                   <button onClick={() => startEdit(comparison)} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
-                    ✏️
+                    ✏️ Edit
                   </button>
                   <button onClick={() => deleteComparison(comparison.id)} className="bg-gray-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-gray-700 transition">
                     🗑️
