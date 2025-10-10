@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const { fileName, htmlContent } = await request.json();
 
-    // Decode base64-encoded full JSON credentials
     const credentialsBase64 = process.env.GOOGLE_CREDENTIALS_BASE64;
     if (!credentialsBase64) {
       throw new Error('Missing GOOGLE_CREDENTIALS_BASE64 environment variable');
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const auth = new google.auth.GoogleAuth({
       credentials,
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
+      scopes: ['https://www.googleapis.com/auth/drive'], // Broader scope
     });
 
     const drive = google.drive({ version: 'v3', auth });
@@ -36,6 +35,7 @@ export async function POST(request: NextRequest) {
       requestBody: fileMetadata,
       media: media,
       fields: 'id, name, webViewLink, webContentLink',
+      supportsAllDrives: true,
     });
 
     return NextResponse.json({
