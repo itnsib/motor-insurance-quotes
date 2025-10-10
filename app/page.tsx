@@ -32,6 +32,7 @@ interface SavedComparison {
   quotes: Quote[];
   advisorComment?: string;
   referenceNumber: string;
+  fileUrl?: string;
 }
 
 // ============ CONSTANTS ============
@@ -164,28 +165,6 @@ const generateReferenceNumber = (): string => {
   const last4 = timestamp.toString().slice(-4);
   const random2 = Math.floor(Math.random() * 100).toString().padStart(2, '0');
   return `${last4}${random2}`;
-};
-
-// ============ GOOGLE DRIVE UPLOAD (NEW SIMPLE VERSION) ============
-const uploadToGoogleDrive = async (fileName: string, htmlContent: string): Promise<string> => {
-  try {
-    const response = await fetch('/api/upload-to-drive', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileName, htmlContent }),
-    });
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-
-    return result.fileId;
-  } catch (error) {
-    console.error('Error uploading to Google Drive:', error);
-    throw error;
-  }
 };
 
 // ============ HTML GENERATOR ============
@@ -488,10 +467,20 @@ function QuoteGeneratorPage() {
       const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
       const fileName = `NSIB_${quotes[0].customerName}_${quotes[0].make}_${quotes[0].model}_${referenceNumber}.html`;
       
-      alert('Uploading to your 5TB Google Drive...');
+      alert('Uploading document...');
       
-      // Upload to Google Drive
-      const fileId = await uploadToGoogleDrive(fileName, htmlContent);
+      // Upload to storage
+      const response = await fetch('/api/upload-to-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName, htmlContent }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
       // Save to local history
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
@@ -502,11 +491,12 @@ function QuoteGeneratorPage() {
         quotes: quotes,
         advisorComment: advisorComment,
         referenceNumber: referenceNumber,
+        fileUrl: result.webViewLink,
       };
       savedHistory.unshift(newComparison);
       localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
       
-      alert(`✅ Success!\n\n📁 Saved to YOUR 5TB Google Drive\n📂 Folder: Motor Insurance Comparison Documents\n📄 File: ${fileName}\n\nFile ID: ${fileId}\n\nAll team members can access this file!`);
+      alert(`✅ Success!\n\n📄 File: ${fileName}\n🔗 URL: ${result.webViewLink}\n\nDocument saved and accessible online!`);
     } catch (error) {
       console.error('Error saving:', error);
       alert('⚠️ Upload failed. Check browser console for details.');
@@ -727,7 +717,7 @@ function QuoteGeneratorPage() {
               ))}
             </div>
             <button onClick={saveToHistory} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition mb-2">
-              💾 Save to History & Google Drive
+              💾 Save to History & Online Storage
             </button>
             <button onClick={generateDocument} className="w-full bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 transition">
               📥 Download Document
@@ -901,7 +891,7 @@ function SavedHistoryPage() {
     <div className="grid grid-cols-1 gap-5">
       <div className="bg-white rounded-xl p-5 shadow-2xl">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
-        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved to Google Drive folder: <strong>&quot;Motor Insurance Comparison Documents&quot;</strong></p>
+        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved online with public URLs</p>
         
         {history.length === 0 ? (
           <div className="text-center text-gray-400 italic py-20">
@@ -935,6 +925,16 @@ function SavedHistoryPage() {
                 )}
                 
                 <div className="flex gap-2">
+                  {comparison.fileUrl && (
+                    <a 
+                      href={comparison.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
+                    >
+                      🔗 View Online
+                    </a>
+                  )}
                   <button onClick={() => downloadComparison(comparison)} className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-green-700 transition">
                     📥 Download
                   </button>
