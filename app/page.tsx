@@ -170,7 +170,7 @@ const generateReferenceNumber = (): string => {
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
-  const rowCount = allCoverageOptions.length + 9;
+  const rowCount = allCoverageOptions.length + 10; // Updated count to include repair type row
   const needsThirdPage = hasComment && rowCount > 12;
 
   return `<!DOCTYPE html>
@@ -226,8 +226,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         </div>
         <div class="section-title">MOTOR INSURANCE COMPARISON</div>
         <div class="vehicle-info">
-            <strong>Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong><br>
-            Repair: ${sortedQuotes[0].repairType}
+            <strong>Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong>
         </div>
         <table class="comparison-table">
             <thead>
@@ -242,6 +241,10 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 </tr>
             </thead>
             <tbody>
+                <tr>
+                    <td>Repair Type</td>
+                    ${sortedQuotes.map(q => `<td>${q.repairType}</td>`).join('')}
+                </tr>
                 <tr>
                     <td>Vehicle Value</td>
                     ${sortedQuotes.map(q => `<td>${q.value}</td>`).join('')}
@@ -801,7 +804,6 @@ function QuoteGeneratorPage() {
             <div className="bg-gray-50 p-4 rounded-lg mb-4 text-center border-l-4 border-indigo-600">
               <h3 className="font-bold text-base mb-1 text-gray-900">Customer: {sortedQuotes[0].customerName}</h3>
               <h3 className="font-bold text-base mb-1 text-gray-900">Vehicle: {sortedQuotes[0].make} {sortedQuotes[0].model} ({sortedQuotes[0].year})</h3>
-              <p className="text-sm text-gray-600">Repair: {sortedQuotes[0].repairType}</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -822,6 +824,12 @@ function QuoteGeneratorPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  <tr>
+                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Repair Type</td>
+                    {sortedQuotes.map(q => (
+                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.repairType}</td>
+                    ))}
+                  </tr>
                   <tr>
                     <td className="p-2 border font-bold bg-gray-50 text-gray-900">Vehicle Value</td>
                     {sortedQuotes.map(q => (
@@ -930,25 +938,46 @@ function SavedHistoryPage() {
     setEditingComparison(null);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingComparison) return;
 
+    // Update localStorage
     const updated = history.map(h => 
       h.id === editingComparison.id ? editingComparison : h
     );
     localStorage.setItem('quotesHistory', JSON.stringify(updated));
     setHistory(updated);
+
+    // Re-upload to update online version
+    try {
+      const sortedQuotes = [...editingComparison.quotes].sort((a, b) => a.total - b.total);
+      const allCoverageOptions = [...new Set(editingComparison.quotes.flatMap(q => q.coverageOptions))];
+      
+      const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, editingComparison.referenceNumber, editingComparison.advisorComment || '');
+      const fileName = `NSIB_${editingComparison.quotes[0].customerName}_${editingComparison.quotes[0].make}_${editingComparison.quotes[0].model}_${editingComparison.referenceNumber}.html`;
+      
+      const response = await fetch('/api/upload-to-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName, htmlContent }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update with new file URL
+        const updatedWithUrl = history.map(h => 
+          h.id === editingComparison.id ? { ...editingComparison, fileUrl: result.webViewLink } : h
+        );
+        localStorage.setItem('quotesHistory', JSON.stringify(updatedWithUrl));
+        setHistory(updatedWithUrl);
+      }
+    } catch (error) {
+      console.error('Error re-uploading:', error);
+    }
+
     setEditingComparison(null);
     alert('Comparison updated successfully!');
-  };
-
-  const downloadPDF = async (comparison: SavedComparison) => {
-    const sortedQuotes = [...comparison.quotes].sort((a, b) => a.total - b.total);
-    const allCoverageOptions = [...new Set(comparison.quotes.flatMap(q => q.coverageOptions))];
-    
-    alert('Generating PDF... This may take a moment.');
-    await generatePDF(sortedQuotes, allCoverageOptions, comparison.referenceNumber, comparison.advisorComment || '');
-    alert('PDF downloaded successfully!');
   };
 
   const formatDate = (isoString: string) => {
@@ -965,8 +994,8 @@ function SavedHistoryPage() {
   // Edit Modal
   if (editingComparison) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5">
-        <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5 overflow-y-auto">
+        <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Comparison</h2>
           
           <div className="mb-4">
@@ -981,17 +1010,47 @@ function SavedHistoryPage() {
 
           <div className="mb-4">
             <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
               {editingComparison.quotes.map((quote, idx) => (
                 <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
-                  <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="mb-3">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
+                      value={quote.company}
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-3">
                     <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
+                      <select
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.repairType}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, repairType: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
+                      >
+                        <option value="Agency">Agency</option>
+                        <option value="Non-Agency">Non-Agency</option>
+                        <option value="Not specified">Not specified</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
                       <input
                         type="text"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
-                        value={quote.company}
-                        readOnly
+                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
+                        value={quote.value}
+                        onChange={(e) => {
+                          const newQuotes = [...editingComparison.quotes];
+                          newQuotes[idx] = { ...quote, value: e.target.value };
+                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                        }}
                       />
                     </div>
                     <div>
@@ -1008,6 +1067,31 @@ function SavedHistoryPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="mb-3">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
+                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded border">
+                      {COVERAGE_OPTIONS.map(option => (
+                        <label key={option.id} className="flex items-center gap-2 text-xs text-gray-800 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={quote.coverageOptions.includes(option.label)}
+                            onChange={(e) => {
+                              const newQuotes = [...editingComparison.quotes];
+                              const currentOptions = quote.coverageOptions;
+                              const newOptions = e.target.checked
+                                ? [...currentOptions, option.label]
+                                : currentOptions.filter(o => o !== option.label);
+                              newQuotes[idx] = { ...quote, coverageOptions: newOptions };
+                              setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                            }}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div>
                       <label className="block text-xs font-bold mb-1 text-gray-800">Premium</label>
@@ -1076,7 +1160,7 @@ function SavedHistoryPage() {
 
           <div className="flex gap-3">
             <button onClick={saveEdit} className="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
-              ✓ Save Changes
+              ✓ Save Changes & Re-upload
             </button>
             <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600 transition">
               ✗ Cancel
@@ -1136,16 +1220,13 @@ function SavedHistoryPage() {
                       rel="noopener noreferrer"
                       className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
                     >
-                      🔗 View
+                      🔗 View Online
                     </a>
                   )}
-                  <button onClick={() => downloadPDF(comparison)} className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
-                    📄 PDF
-                  </button>
-                  <button onClick={() => startEdit(comparison)} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
+                  <button onClick={() => startEdit(comparison)} className="flex-1 bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
                     ✏️ Edit
                   </button>
-                  <button onClick={() => deleteComparison(comparison.id)} className="bg-gray-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-gray-700 transition">
+                  <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
                     🗑️
                   </button>
                 </div>
