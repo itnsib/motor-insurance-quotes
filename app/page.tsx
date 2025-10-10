@@ -171,8 +171,6 @@ const generateReferenceNumber = (): string => {
 // ============ HTML GENERATOR ============
 function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
   const hasComment = advisorComment && advisorComment.trim().length > 0;
-  const rowCount = allCoverageOptions.length + 10;
-  const needsThirdPageForFooter = rowCount > 15; // If too many rows, move footer to page 3
 
   return `<!DOCTYPE html>
 <html>
@@ -185,17 +183,16 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         body { font-family: Arial; font-size: 10px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
-        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm ${needsThirdPageForFooter ? '10mm' : '35mm'} 10mm; page-break-after: ${needsThirdPageForFooter ? 'always' : 'auto'}; position: relative; }
-        .page3 { width: 210mm; height: 297mm; padding: 8mm 10mm 10mm 10mm; position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
+        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm 25mm 10mm; position: relative; }
         .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
         .reference-number { position: absolute; top: 2mm; left: 10mm; font-size: 7px; color: #666; }
         .section-title { font-size: 16px; font-weight: bold; text-align: center; margin: 3mm 0; color: #000; }
         .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 10px; color: #000; }
-        .comparison-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 2mm 0; table-layout: fixed; }
-        .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2.5mm 2mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 11px; padding: 3mm 2mm; font-weight: bold; }
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 2mm 0; table-layout: fixed; }
+        .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2mm 1.5mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 10px; padding: 2.5mm 1.5mm; font-weight: bold; }
         .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 40mm; }
         .comparison-table td { background: #fff; color: #000 !important; }
         .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; color: #000 !important; }
@@ -205,16 +202,16 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .not-included { color: #dc3545 !important; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
         .total-row td { color: #000 !important; }
-        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 3mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 3mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 9px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
-        .advisor-comment h4 { font-size: 11px; margin-bottom: 2mm; color: #856404; }
-        .disclaimer { background: #fff3cd; padding: 3mm; margin: 3mm 0; font-size: 8px; line-height: 1.4; border-left: 2mm solid #ffc107; color: #000; }
-        .disclaimer h4 { font-size: 10px; margin-bottom: 2mm; color: #856404; }
-        .footer-contact { ${needsThirdPageForFooter ? '' : 'position: absolute; bottom: 0; left: 0; right: 0;'} width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 4mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.5; }
+        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .advisor-comment { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
+        .advisor-comment h4 { font-size: 10px; margin-bottom: 1.5mm; color: #856404; }
+        .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 7px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
+        .disclaimer h4 { font-size: 9px; margin-bottom: 1.5mm; color: #856404; }
+        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 7px; line-height: 1.3; }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
-        .footer-contact strong { display: block; margin-bottom: 1mm; color: #fff !important; }
+        .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 7.5px; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
@@ -239,7 +236,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     <th>BENEFITS</th>
                     ${sortedQuotes.map((q) => `
                         <th>
-                            <div style="font-size: 9px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            <div style="font-size: 8px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
                             ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                             ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
                         </th>
@@ -305,51 +302,21 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         <div class="disclaimer">
             <h4>Disclaimer</h4>
             <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
-            <p style="margin-top: 2mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+            <p style="margin-top: 1.5mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
         </div>
         
-        ${!needsThirdPageForFooter ? `
         <div class="footer-contact">
             <div class="footer-left">
                 <strong>Suite 2801, One by Omniyat</strong>
-                Al Mustaqbal Street, Business Bay<br>
-                Dubai, U.A.E<br>
-                P O BOX 233640<br>
-                <br>
+                Al Mustaqbal Street, Business Bay, Dubai, U.A.E | P O BOX 233640<br>
                 <strong>UAE Central Bank Registration Number : 200</strong>
             </div>
             <div class="footer-right">
                 <strong>Call us on +971 47058000</strong>
-                <br>
-                Email us : enquiry@nsib.ae<br>
-                <br>
-                Visit our website: nsib.ae
-            </div>
-        </div>
-        ` : ''}
-    </div>
-    
-    ${needsThirdPageForFooter ? `
-    <div class="page3">
-        <div class="footer-contact">
-            <div class="footer-left">
-                <strong>Suite 2801, One by Omniyat</strong>
-                Al Mustaqbal Street, Business Bay<br>
-                Dubai, U.A.E<br>
-                P O BOX 233640<br>
-                <br>
-                <strong>UAE Central Bank Registration Number : 200</strong>
-            </div>
-            <div class="footer-right">
-                <strong>Call us on +971 47058000</strong>
-                <br>
-                Email us : enquiry@nsib.ae<br>
-                <br>
-                Visit our website: nsib.ae
+                Email us : enquiry@nsib.ae | Visit our website: nsib.ae
             </div>
         </div>
     </div>
-    ` : ''}
 </body>
 </html>`;
 }
