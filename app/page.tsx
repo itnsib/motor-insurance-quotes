@@ -257,7 +257,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     ${sortedQuotes.map(q => `<td>${q.thirdPartyLiability}</td>`).join('')}
                 </tr>
                 <tr>
-                    <td>Oman Cover</td>
+                    <td>Oman Cover (Own damage only)</td>
                     ${sortedQuotes.map(q => `<td>${q.omanCover}</td>`).join('')}
                 </tr>
                 <tr>
