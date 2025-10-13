@@ -868,6 +868,52 @@ function SavedHistoryPage() {
     setEditingComparison(null);
   };
 
+  const addNewQuote = () => {
+    if (!editingComparison) return;
+
+    const newQuote: Quote = {
+      id: Date.now().toString(),
+      customerName: editingComparison.quotes[0].customerName,
+      make: editingComparison.quotes[0].make,
+      model: editingComparison.quotes[0].model,
+      year: editingComparison.quotes[0].year,
+      value: editingComparison.quotes[0].value,
+      repairType: 'Not specified',
+      company: '',
+      thirdPartyLiability: 'UPTO AED 1 Million',
+      coverageOptions: [],
+      omanCover: 'No',
+      windscreenExcess: 'UPTO AED 1000',
+      excess: 0,
+      premium: 0,
+      vat: 0,
+      total: 0,
+      isRecommended: false,
+      isRenewal: false,
+    };
+
+    setEditingComparison({
+      ...editingComparison,
+      quotes: [...editingComparison.quotes, newQuote]
+    });
+  };
+
+  const deleteQuote = (quoteId: string) => {
+    if (!editingComparison) return;
+
+    if (editingComparison.quotes.length <= 1) {
+      alert('Cannot delete the last quote. A comparison must have at least one quote.');
+      return;
+    }
+
+    if (!confirm('Delete this quote from the comparison?')) return;
+
+    setEditingComparison({
+      ...editingComparison,
+      quotes: editingComparison.quotes.filter(q => q.id !== quoteId)
+    });
+  };
+
   const downloadComparison = (comparison: SavedComparison) => {
     const sortedQuotes = [...comparison.quotes].sort((a, b) => a.total - b.total);
     const allCoverageOptions = [...new Set(comparison.quotes.flatMap(q => q.coverageOptions))];
@@ -881,6 +927,13 @@ function SavedHistoryPage() {
 
   const saveEdit = async () => {
     if (!editingComparison) return;
+
+    // Validate that all quotes have company names
+    const hasEmptyCompany = editingComparison.quotes.some(q => !q.company || q.company.trim() === '');
+    if (hasEmptyCompany) {
+      alert('Please fill in the Insurance Company name for all quotes before saving.');
+      return;
+    }
 
     alert('Saving changes and re-uploading to Vercel Blob...');
 
@@ -950,7 +1003,15 @@ function SavedHistoryPage() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5 overflow-y-auto">
         <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8 max-h-[90vh] overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">Edit Comparison</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Edit Comparison</h2>
+            <button 
+              onClick={addNewQuote}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition"
+            >
+              ➕ Add New Quote
+            </button>
+          </div>
           
           <div className="mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-800">Advisor Comment</label>
@@ -966,15 +1027,36 @@ function SavedHistoryPage() {
             <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
             <div className="space-y-4">
               {editingComparison.quotes.map((quote, idx) => (
-                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
-                  <div className="mb-3">
-                    <label className="block text-xs font-bold mb-1 text-gray-800">Company</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
+                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 relative">
+                  <button
+                    onClick={() => deleteQuote(quote.id)}
+                    className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-700 transition"
+                    title="Delete this quote"
+                  >
+                    🗑️ Delete Quote
+                  </button>
+
+                  <div className="mb-3 pr-32">
+                    <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
+                    <select
+                      className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
                       value={quote.company}
-                      readOnly
-                    />
+                      onChange={(e) => {
+                        const newQuotes = [...editingComparison.quotes];
+                        const selectedCompany = e.target.value;
+                        newQuotes[idx] = { 
+                          ...quote, 
+                          company: selectedCompany,
+                          coverageOptions: selectedCompany ? getCoverageDefaults(selectedCompany) : []
+                        };
+                        setEditingComparison({ ...editingComparison, quotes: newQuotes });
+                      }}
+                    >
+                      <option value="">Select Insurance Company</option>
+                      {INSURANCE_COMPANIES.map(company => (
+                        <option key={company} value={company}>{company}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 mb-3">
