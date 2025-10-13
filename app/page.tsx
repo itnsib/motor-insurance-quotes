@@ -101,6 +101,7 @@ const INSURANCE_COMPANIES = [
 ];
 
 const THIRD_PARTY_LIABILITY_OPTIONS = [
+  'NA',
   'UPTO AED 1 Million',
   'UPTO AED 1.5 Million',
   'UPTO AED 2 Million',
@@ -113,12 +114,14 @@ const THIRD_PARTY_LIABILITY_OPTIONS = [
 ];
 
 const OMAN_COVER_OPTIONS = [
+  'NA',
   'Yes',
   'Yes(Orange Card available on request)',
   'No'
 ];
 
 const WINDSCREEN_EXCESS_OPTIONS = [
+  'NA',
   'UPTO AED 1000',
   'UPTO AED 1500',
   'UPTO AED 2000',
@@ -345,15 +348,15 @@ function QuoteGeneratorPage() {
     vehicleValue: '',
     repairType: '',
     insuranceCompany: '',
-    thirdPartyLiability: 'UPTO AED 1 Million',
+    thirdPartyLiability: 'NA',  // Changed from 'UPTO AED 1 Million'
     excess: 0,
     premium: 0,
     isRecommended: false,
     isRenewal: false,
   });
   const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
-  const [omanCover, setOmanCover] = useState('No');
-  const [windscreenExcess, setWindscreenExcess] = useState('UPTO AED 1000');
+  const [omanCover, setOmanCover] = useState('NA'); // Changed from 'UPTO AED 1000'
+  const [windscreenExcess, setWindscreenExcess] = useState('NA');
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
   const [advisorComment, setAdvisorComment] = useState('');
@@ -590,6 +593,7 @@ function QuoteGeneratorPage() {
             <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
             <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
               <option value="">Select Type</option>
+	      <option value="NA">NA</option>
               <option value="Agency">Agency</option>
               <option value="Non-Agency">Non-Agency</option>
             </select>
@@ -878,12 +882,12 @@ function SavedHistoryPage() {
       model: editingComparison.quotes[0].model,
       year: editingComparison.quotes[0].year,
       value: editingComparison.quotes[0].value,
-      repairType: 'Not specified',
+      repairType: 'NA',  // Changed from 'Not specified'
       company: '',
-      thirdPartyLiability: 'UPTO AED 1 Million',
+      thirdPartyLiability: 'NA',  // Changed from 'UPTO AED 1 Million'
       coverageOptions: [],
-      omanCover: 'No',
-      windscreenExcess: 'UPTO AED 1000',
+      omanCover: 'NA',  // Changed from 'No'
+      windscreenExcess: 'NA',  // Changed from 'UPTO AED 1000'
       excess: 0,
       premium: 0,
       vat: 0,
@@ -1071,6 +1075,7 @@ function SavedHistoryPage() {
                           setEditingComparison({ ...editingComparison, quotes: newQuotes });
                         }}
                       >
+			<option value="NA">NA</option>
                         <option value="Agency">Agency</option>
                         <option value="Non-Agency">Non-Agency</option>
                         <option value="Not specified">Not specified</option>
