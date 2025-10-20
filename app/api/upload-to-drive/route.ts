@@ -1,11 +1,20 @@
 import { put } from '@vercel/blob';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export const runtime = 'edge';
+
+export async function POST(request: Request) {
   try {
     const { fileName, htmlContent } = await request.json();
 
-    // Upload to Vercel Blob Storage
+    if (!fileName || !htmlContent) {
+      return NextResponse.json(
+        { success: false, error: 'Missing fileName or htmlContent' },
+        { status: 400 }
+      );
+    }
+
+    // Upload to Vercel Blob
     const blob = await put(fileName, htmlContent, {
       access: 'public',
       contentType: 'text/html',
@@ -13,15 +22,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      fileId: blob.pathname,
-      fileName: fileName,
-      webViewLink: blob.url,
-      downloadLink: blob.downloadUrl,
+      url: blob.url,
+      downloadUrl: blob.downloadUrl,
+      webViewLink: blob.url, // For compatibility with existing code
     });
   } catch (error) {
-    console.error('Error uploading:', error);
+    console.error('Error uploading to Vercel Blob:', error);
+    
+    // Return detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json(
-      { success: false, error: String(error) },
+      {
+        success: false,
+        error: errorMessage,
+        details: errorStack,
+      },
       { status: 500 }
     );
   }
