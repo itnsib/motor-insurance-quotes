@@ -111,6 +111,7 @@ const VEHICLE_MAKES = [
   'Volkswagen',
   'Volvo',
   'Wey',
+  'Ashok Leyland (BUS)',
   'Other'
 ];
 
