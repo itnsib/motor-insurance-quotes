@@ -68,6 +68,7 @@ const VEHICLE_MAKES = [
   'GMC',
   'Great Wall',
   'Haval',
+  'Hino 300',
   'Honda',
   'Hongqi',
   'Hummer',
