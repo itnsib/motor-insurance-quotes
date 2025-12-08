@@ -43,6 +43,7 @@ const VEHICLE_MAKES = [
   'Audi',
   'BAIC Motor',
   'Bentley',
+  'Bestune',
   'BMW',
   'Bugatti',
   'Buick',
