@@ -467,7 +467,7 @@ export default function App() {
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
 
   const insuranceCompanies = businessType === 'Private' ? PRIVATE_INSURANCE_COMPANIES : COMMERCIAL_INSURANCE_COMPANIES;
-  const hasProductTypes = formData.insuranceCompany && COMPANY_PRODUCT_TYPES[formData.insuranceCompany];
+  const hasProductTypes = Boolean(formData.insuranceCompany && COMPANY_PRODUCT_TYPES[formData.insuranceCompany]);
 
   const handlePremiumChange = (premium: number) => {
     const { vat: calculatedVat, total: calculatedTotal } = calculateVAT(premium);
