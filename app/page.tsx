@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +5,8 @@ import { useState, useEffect } from 'react';
 // ============ TYPES ============
 interface Quote {
   id: string;
+  businessType: 'Private' | 'Commercial';
+  enquiryNumber: string;
   customerName: string;
   make: string;
   model: string;
@@ -13,6 +14,7 @@ interface Quote {
   value: string;
   repairType: string;
   company: string;
+  productType?: string;
   thirdPartyLiability: string;
   coverageOptions: string[];
   omanCover: string;
@@ -23,6 +25,7 @@ interface Quote {
   total: number;
   isRecommended: boolean;
   isRenewal: boolean;
+  advisorComment: string; // NEW: Per-quote comment
 }
 
 interface SavedComparison {
@@ -30,183 +33,76 @@ interface SavedComparison {
   date: string;
   vehicle: string;
   quotes: Quote[];
-  advisorComment?: string;
   referenceNumber: string;
   fileUrl?: string;
 }
 
-// ============ CONSTANTS ============
+interface CompanyDefaults {
+  repairType: string;
+  thirdPartyLiability: string;
+  omanCover: string;
+  windscreenExcess: string;
+  coverageOptions: string[];
+}
+
+// ============ CONSTANTS FROM GOOGLE SHEETS ============
 const VEHICLE_MAKES = [
-  'Acura',
-  'Alfa Romeo',
-  'Aston Martin',
-  'Audi',
-  'BAIC Motor',
-  'Bentley',
-  'Bestune',
-  'BMW',
-  'Bugatti',
-  'Buick',
-  'BYD',
-  'Cadillac',
-  'Changan',
-  'Chery',
-  'Chevrolet',
-  'Chrysler',
-  'Citroën',
-  'Dacia',
-  'Daewoo',
-  'Daihatsu',
-  'Dodge',
-  'Dongfeng',
-  'Exeed',
-  'Ferrari',
-  'Fiat',
-  'Ford',
-  'GAC Motor',
-  'Geely',
-  'Genesis',
-  'GMC',
-  'Great Wall',
-  'Haval',
-  'Hino 300',
-  'Honda',
-  'Hongqi',
-  'Hummer',
-  'Hyundai',
-  'Infiniti',
-  'Isuzu',
-  'JAC Motors',
-  'Jaguar',
-  'Jeep',
-  'Jetour',
-  'Kia',
-  'Lamborghini',
-  'Land Rover',
-  'Lexus',
-  'Lincoln',
-  'Lotus',
-  'Maserati',
-  'Mazda',
-  'McLaren',
-  'Mercedes-Benz',
-  'MG',
-  'Mini',
-  'Mitsubishi',
-  'Nio',
-  'Nissan',
-  'Opel',
-  'Peugeot',
-  'Porsche',
-  'RAM',
-  'Renault',
-  'Rolls-Royce',
-  'Saab',
-  'Seat',
-  'Skoda',
-  'Smart',
-  'SsangYong',
-  'Subaru',
-  'Suzuki',
-  'Tesla',
-  'Toyota',
-  'Volkswagen',
-  'Volvo',
-  'Wey',
-  'Ashok Leyland (BUS)',
-  'Other'
+  'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'BAIC Motor', 'Bentley', 'Bestune', 'BMW',
+  'Bugatti', 'Buick', 'BYD', 'Cadillac', 'Changan', 'Chery', 'Chevrolet', 'Chrysler',
+  'Citroën', 'Dacia', 'Daewoo', 'Daihatsu', 'Dodge', 'Dongfeng', 'Exeed', 'Ferrari',
+  'Fiat', 'Ford', 'GAC Motor', 'Geely', 'Genesis', 'GMC', 'Great Wall', 'Haval',
+  'Hino 300', 'Honda', 'Hongqi', 'Hummer', 'Hyundai', 'Infiniti', 'Isuzu', 'JAC Motors',
+  'Jaguar', 'Jeep', 'Jetour', 'Kia', 'Lamborghini', 'Land Rover', 'Lexus', 'Lincoln',
+  'Lotus', 'Maserati', 'Mazda', 'McLaren', 'Mercedes-Benz', 'MG', 'Mini', 'Mitsubishi',
+  'Nio', 'Nissan', 'Opel', 'Peugeot', 'Porsche', 'RAM', 'Renault', 'Rolls-Royce',
+  'Saab', 'Seat', 'Skoda', 'Smart', 'SsangYong', 'Subaru', 'Suzuki', 'Tesla',
+  'Toyota', 'Volkswagen', 'Volvo', 'Wey', 'Ashok Leyland (BUS)', 'Other'
 ];
 
 const YEARS = [
-  '2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', 
-  '2016', '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008', '2007', 
-  '2006', '2005', '2004', '2003', '2002', '2001', '2000', '1999', '1998', '1997', 
+  '2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017',
+  '2016', '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008', '2007',
+  '2006', '2005', '2004', '2003', '2002', '2001', '2000', '1999', '1998', '1997',
   '1996', '1995', '1994', '1993', '1992', '1991', '1990'
 ];
 
-const INSURANCE_COMPANIES = [
-  'ABU DHABI NATIONAL INSURANCE COMPANY',
-  'ADAMJEE INSURANCE COMPANY LIMITED',
-  'AL AIN AHLIA INSURANCE CO. (PSC)',
-  'AL BUHAIRA NATIONAL INSURANCE CO.',
-  'AL DHAFRA INSURANCE COMPANY PSC',
-  'AL FUJAIRAH NATIONAL INSURANCE COMPANY (P.S.C.)',
-  'AL ITTIHAD AL WATANI',	
-  'AL KHAZNA INSURANCE COMPANY P.S.C',
-  'AL MADALLAH INSURANCE CO. PSC',
-  'AL SAGR NATIONAL INSURANCE COMPANY',
-  'AL WATHBA NATIONAL INSURANCE COMPANY P.S.C.',
-  'ALLIANCE INSURANCE PSC',
-  'ARAB ORIENT INSURANCE CO.',
-  'ARABIA INSURANCE COMPANY PSC',
-  'ASCANA INSURANCE COMPANY LLC',
-  'AXA INSURANCE (GULF) B.S.C.(C)',
-  'BUPA INSURANCE',
-  'DAR AL TAKAFUL PJSC',
-  'DAMAN NATIONAL HEALTH INSURANCE CO. PSC',
-  'DUBAI INSURANCE CO. PSC',
-  'DUBAI NATIONAL INSURANCE & REINSURANCE P.S.C.',
-  'EMIRATES INSURANCE CO. (PSC)',
-  'FIDELITY UNITED INSURANCE CO. PSC',
-  'GIG GULF (GULF INSURANCE GROUP)',
-  'GREEN CRESCENT INSURANCE COMPANY LLC',
-  'INSURANCE HOUSE PSC',
-  'Liva Insurance',
-  'METHAQ TAKAFUL INSURANCE CO. PSC',
-  'NATIONAL GENERAL INSURANCE CO. (PSC)',
-  'NATIONAL HEALTH INSURANCE COMPANY - DAMAN',
-  'NEURON INSURANCE PSC',
-  'NEW INDIA ASSURANCE CO LTD, ABU DHABI',
-  'NEW INDIA ASSURANCE CO LTD, DUBAI',
-  'NOOR TAKAFUL FAMILY',
-  'ORIENT INSURANCE PJSC',
-  'ORIENT UNB TAKAFUL P.J.S.C',
-  'OMAN INSURANCE CO. P.S.C',
-  'Qatar INSURANCE COMPANY',
-  'RAK NATIONAL INSURANCE CO PSC',
-  'SALAMA ISLAMIC ARAB INSURANCE CO. PSC',
-  'SUKOON INSURANCE CO. PSC',
-  'TAKAFUL EMARAT',
-  'THE NEW INDIA ASSURANCE COMPANY',
-  'UNION INSURANCE COMPANY PSC',
-  'UNITED FIDELITY INSURANCE COMPANY PSC',
-  'WATANIA INTERNATIONAL INSURANCE CO. PSC',
-  'YAS TAKAFUL',
-  'ZURICH INTERNATIONAL LIFE LIMITED'
+const PRIVATE_INSURANCE_COMPANIES = [
+  'SUKOON', 'DNI', 'QATAR', 'WATANIA', 'ADAMJEE', 'FIDELITY', 'LIVA', 'EMIRATES',
+  'RAK', 'SALAMA', 'NEW INDIA DXB', 'METHAQ', 'NGI', 'AL WATHBA', 'ORIENT INSRANCE',
+  'UNION INSURANCE', 'NIA ABU DHABI', 'AL SAGR'
 ];
 
+const COMMERCIAL_INSURANCE_COMPANIES = [
+  'SUKOON', 'ADAMJEE', 'METHAQ (ind. pickup)', 'NEW INDIA ABU DHABI',
+  'DNIRC', 'NIA DXB', 'AL SAGR'
+];
+
+const COMPANY_PRODUCT_TYPES: Record<string, string[]> = {
+  'SUKOON': ['Gold', 'Privilege Club'],
+  'DNI': ['Standard', 'High Value'],
+  'QATAR': ['Basic', 'Prestige Plus'],
+  'WATANIA': [
+    'WT MUMTAZ- NON AGENCY REPAIR PLAN (NB)',
+    'WT MUMTAZ- PREMIER REPAIR PLAN (NB)',
+    'WT MUMTAZ- DYNATRADE REPAIR PLAN (NB)',
+    'WT MUMTAZ- GERMAN EXPERTS REPAIR PLAN (NB)'
+  ]
+};
+
 const THIRD_PARTY_LIABILITY_OPTIONS = [
-  'NA',
-  'UPTO AED 1 Million',
-  'UPTO AED 1.5 Million',
-  'UPTO AED 2 Million',
-  'UPTO AED 2.5 Million',
-  'UPTO AED 3 Million',
-  'UPTO AED 3.5 Million',
-  'UPTO AED 4 Million',
-  'UPTO AED 4.5 Million',
-  'UPTO AED 5 Million'
+  'NA', 'UPTO AED 1 Million', 'UPTO AED 1.5 Million', 'UPTO AED 2 Million',
+  'UPTO AED 2.5 Million', 'UPTO AED 3 Million', 'UPTO AED 3.5 Million',
+  'UPTO AED 4 Million', 'UPTO AED 4.5 Million', 'UPTO AED 5 Million'
 ];
 
 const OMAN_COVER_OPTIONS = [
-  'NA',
-  'Yes',
-  'Yes(Orange Card available on request)',
-  'No'
+  'NA', 'Yes', 'Yes(Orange Card available on request)', 'YES(OWN DAMAGE ONLY)', 'No'
 ];
 
 const WINDSCREEN_EXCESS_OPTIONS = [
-  'NA',
-  'UPTO AED 1000',
-  'UPTO AED 1500',
-  'UPTO AED 2000',
-  'UPTO AED 2500',
-  'UPTO AED 3000',
-  'UPTO AED 3500',
-  'UPTO AED 4000',
-  'UPTO AED 4500',
-  'UPTO AED 5000',
-  'UNLIMITED'
+  'NA', 'UPTO AED 1000', 'UPTO AED 1500', 'UPTO AED 2000', 'UPTO AED 2500',
+  'UPTO AED 3000', 'UPTO AED 3500', 'UPTO AED 4000', 'UPTO AED 4500',
+  'UPTO AED 5000', 'UNLIMITED'
 ];
 
 const COVERAGE_OPTIONS = [
@@ -222,21 +118,152 @@ const COVERAGE_OPTIONS = [
   { id: 'hirecarBenefit', label: 'Hire car Benefit' }
 ];
 
-const getCoverageDefaults = (company: string): string[] => {
-  const defaults: Record<string, string[]> = {
-    'UNITED FIDELITY INSURANCE COMPANY PSC': ['Natural Calamities Riot and strike', 'Emergency medical expenses', 'Passengers Cover', 'Optional Covers Driver Cover'],
-    'EMIRATES INSURANCE CO. (PSC)': ['Passengers Cover', 'Optional Covers Driver Cover', 'Natural Calamities Riot and strike'],
-    'Liva Insurance': ['Natural Calamities Riot and strike', '24 Hour Accident and Breakdown Recovery', 'Passengers Cover', 'Optional Covers Driver Cover'],
-    'AXA INSURANCE (GULF) B.S.C.(C)': ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery'],
-    'DUBAI INSURANCE CO. PSC': ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Passengers Cover', 'Optional Covers Driver Cover'],
-    'TAKAFUL EMARAT': ['Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery'],
+// ============ COMPREHENSIVE DEFAULTS SYSTEM ============
+const getCompanyDefaults = (company: string, productType?: string): CompanyDefaults => {
+  const defaultValues: CompanyDefaults = {
+    repairType: 'NA',
+    thirdPartyLiability: 'NA',
+    omanCover: 'NA',
+    windscreenExcess: 'NA',
+    coverageOptions: []
   };
-  return defaults[company] || [];
+
+  const companyDefaults: Record<string, CompanyDefaults> = {
+    'SUKOON': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: productType === 'Gold' ? 'UPTO AED 3.5 Million' : 'UPTO AED 5 Million',
+      omanCover: 'Yes(Orange Card available on request)',
+      windscreenExcess: productType === 'Gold' ? 'UPTO AED 3000' : 'UNLIMITED',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'DNI': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: productType === 'Standard' ? 'UPTO AED 3 Million' : 'UPTO AED 3.5 Million',
+      omanCover: 'YES(OWN DAMAGE ONLY)',
+      windscreenExcess: productType === 'Standard' ? 'UPTO AED 3500' : 'UPTO AED 5000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'QATAR': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: productType === 'Basic' ? 'UPTO AED 3.5 Million' : 'UPTO AED 3 Million',
+      omanCover: 'Yes(Orange Card available on request)',
+      windscreenExcess: 'UPTO AED 3000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'WATANIA': {
+      repairType: 'Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'No',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Emergency medical expenses', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'ADAMJEE': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES(OWN DAMAGE ONLY)',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'FIDELITY': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 3.5 Million',
+      omanCover: 'Yes(Orange Card available on request)',
+      windscreenExcess: 'UPTO AED 3000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'LIVA': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES(OWN DAMAGE ONLY)',
+      windscreenExcess: 'UPTO AED 2500',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'EMIRATES': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 3.5 Million',
+      omanCover: 'Yes(Orange Card available on request)',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'RAK': {
+      repairType: 'Non-Agency',
+      thirdPartyLiability: 'UPTO AED 3.5 Million',
+      omanCover: 'YES',
+      windscreenExcess: 'UPTO AED 2500',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'SALAMA': {
+      repairType: 'Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES',
+      windscreenExcess: 'UPTO AED 3000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'NEW INDIA DXB': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'No',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'METHAQ': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'NGI': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES',
+      windscreenExcess: 'UPTO AED 1500',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'AL WATHBA': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 3.5 Million',
+      omanCover: 'Yes',
+      windscreenExcess: 'UPTO AED 3000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Off-road cover (For 4x4 only)', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'ORIENT INSRANCE': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 3.5 Million',
+      omanCover: 'Yes',
+      windscreenExcess: 'UPTO AED 1000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'UNION INSURANCE': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'YES',
+      windscreenExcess: 'UPTO AED 5000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', 'Personal belongings', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'NIA ABU DHABI': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'No',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    },
+    'AL SAGR': {
+      repairType: 'Agency/Non-Agency',
+      thirdPartyLiability: 'UPTO AED 2 Million',
+      omanCover: 'No',
+      windscreenExcess: 'UPTO AED 2000',
+      coverageOptions: ['Fire and theft cover', 'Natural Calamities Riot and strike', 'Emergency medical expenses', '24 Hour Accident and Breakdown Recovery', 'Ambulance Cover', 'Optional Covers Driver Cover', 'Passengers Cover']
+    }
+  };
+
+  return companyDefaults[company] || defaultValues;
 };
 
 const calculateVAT = (premium: number): { vat: number; total: number } => {
-  const vat = Math.round(premium * 0.05);
-  return { vat, total: premium + vat };
+  const vat = Math.round(premium * 0.05 * 100) / 100;
+  const total = Math.round((premium + vat) * 100) / 100;
+  return { vat, total };
 };
 
 const generateReferenceNumber = (): string => {
@@ -247,10 +274,7 @@ const generateReferenceNumber = (): string => {
 };
 
 // ============ HTML GENERATOR ============
-// ============ HTML GENERATOR ============
-function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string, advisorComment: string): string {
-  const hasComment = advisorComment && advisorComment.trim().length > 0;
-
+function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: string[], referenceNumber: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -307,7 +331,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         </div>
         <div class="section-title">MOTOR INSURANCE COMPARISON</div>
         <div class="vehicle-info">
-            <strong>Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong>
+            <strong>Enquiry: ${sortedQuotes[0].enquiryNumber} | Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong>
         </div>
         <table class="comparison-table">
             <thead>
@@ -316,6 +340,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     ${sortedQuotes.map((q) => `
                         <th>
                             <div style="font-size: 8px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            ${q.productType ? `<div style="font-size: 7px; color: #fff; margin-bottom: 1mm;">${q.productType}</div>` : ''}
                             ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                             ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
                         </th>
@@ -358,25 +383,25 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                 </tr>
                 <tr class="light-blue-row">
                     <td>Premium</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.premium.toLocaleString()}</td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.premium.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="light-blue-row">
                     <td>VAT (5%)</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.vat.toLocaleString()}</td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.vat.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="light-blue-row total-row">
                     <td>Total</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.total.toLocaleString()}</td>`).join('')}
+                    ${sortedQuotes.map(q => `<td>AED ${q.total.toFixed(2)}</td>`).join('')}
                 </tr>
             </tbody>
         </table>
         
-        ${hasComment ? `
+        ${sortedQuotes.map((q, idx) => q.advisorComment ? `
         <div class="advisor-comment">
-            <h4>Advisor Comment</h4>
-            <p>${advisorComment}</p>
+            <h4>Advisor Comment - ${q.company}</h4>
+            <p>${q.advisorComment}</p>
         </div>
-        ` : ''}
+        ` : '').join('')}
         
         <div class="disclaimer">
             <h4>Disclaimer</h4>
@@ -400,7 +425,6 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
 </html>`;
 }
 
-// ============ DOWNLOAD FUNCTION ============
 function downloadHTMLFile(htmlContent: string, fileName: string) {
   const blob = new Blob([htmlContent], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -413,10 +437,12 @@ function downloadHTMLFile(htmlContent: string, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-// ============ MAIN COMPONENT ============
+// ============ QUOTE GENERATOR PAGE ============
 function QuoteGeneratorPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [businessType, setBusinessType] = useState<'Private' | 'Commercial'>('Private');
   const [formData, setFormData] = useState({
+    enquiryNumber: '',
     customerName: '',
     vehicleMake: '',
     vehicleModel: '',
@@ -424,18 +450,23 @@ function QuoteGeneratorPage() {
     vehicleValue: '',
     repairType: '',
     insuranceCompany: '',
-    thirdPartyLiability: 'NA',  // Changed from 'UPTO AED 1 Million'
+    productType: '',
+    thirdPartyLiability: 'NA',
     excess: 0,
     premium: 0,
     isRecommended: false,
     isRenewal: false,
   });
   const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
-  const [omanCover, setOmanCover] = useState('NA'); // Changed from 'UPTO AED 1000'
+  const [omanCover, setOmanCover] = useState('NA');
   const [windscreenExcess, setWindscreenExcess] = useState('NA');
+  const [advisorComment, setAdvisorComment] = useState(''); // Per-quote comment
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
-  const [advisorComment, setAdvisorComment] = useState('');
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+
+  const insuranceCompanies = businessType === 'Private' ? PRIVATE_INSURANCE_COMPANIES : COMMERCIAL_INSURANCE_COMPANIES;
+  const hasProductTypes = formData.insuranceCompany && COMPANY_PRODUCT_TYPES[formData.insuranceCompany];
 
   const handlePremiumChange = (premium: number) => {
     const { vat: calculatedVat, total: calculatedTotal } = calculateVAT(premium);
@@ -445,9 +476,31 @@ function QuoteGeneratorPage() {
   };
 
   const handleCompanyChange = (company: string) => {
-    setFormData({ ...formData, insuranceCompany: company });
-    const defaults = getCoverageDefaults(company);
-    setSelectedCoverage(defaults);
+    const defaults = getCompanyDefaults(company);
+    
+    setFormData(prev => ({
+      ...prev,
+      insuranceCompany: company,
+      productType: '',
+      repairType: defaults.repairType,
+      thirdPartyLiability: defaults.thirdPartyLiability
+    }));
+    
+    setOmanCover(defaults.omanCover);
+    setWindscreenExcess(defaults.windscreenExcess);
+    setSelectedCoverage(defaults.coverageOptions);
+  };
+
+  const handleProductTypeChange = (productType: string) => {
+    const defaults = getCompanyDefaults(formData.insuranceCompany, productType);
+    
+    setFormData(prev => ({
+      ...prev,
+      productType,
+      thirdPartyLiability: defaults.thirdPartyLiability
+    }));
+    
+    setWindscreenExcess(defaults.windscreenExcess);
   };
 
   const handleCoverageToggle = (label: string) => {
@@ -457,21 +510,26 @@ function QuoteGeneratorPage() {
   };
 
   const addQuote = () => {
-    if (!formData.customerName || !formData.vehicleMake || !formData.vehicleModel || !formData.insuranceCompany || !formData.premium) {
-      alert('Please fill required fields: Name, Make, Model, Company, and Premium');
+    // Validation
+    if (!formData.enquiryNumber || !formData.customerName || !formData.vehicleMake || !formData.vehicleModel || !formData.insuranceCompany || !formData.premium) {
+      alert('Please fill required fields: Enquiry Number, Name, Make, Model, Company, and Premium');
       return;
     }
 
-    const existingIndex = quotes.findIndex(q => q.company === formData.insuranceCompany);
-    if (existingIndex !== -1) {
-      if (!confirm(`Quote for ${formData.insuranceCompany} already exists. Replace it?`)) return;
-      const newQuotes = [...quotes];
-      newQuotes.splice(existingIndex, 1);
-      setQuotes(newQuotes);
+    if (hasProductTypes && !formData.productType) {
+      alert('Please select a Product Type for this company');
+      return;
+    }
+
+    if (!advisorComment || advisorComment.trim() === '') {
+      alert('Please enter an Advisor Comment for this quote');
+      return;
     }
 
     const newQuote: Quote = {
       id: Date.now().toString(),
+      businessType,
+      enquiryNumber: formData.enquiryNumber,
       customerName: formData.customerName,
       make: formData.vehicleMake,
       model: formData.vehicleModel,
@@ -479,6 +537,7 @@ function QuoteGeneratorPage() {
       value: formData.vehicleValue || 'Not specified',
       repairType: formData.repairType || 'Not specified',
       company: formData.insuranceCompany,
+      productType: formData.productType,
       thirdPartyLiability: formData.thirdPartyLiability,
       coverageOptions: selectedCoverage,
       omanCover: omanCover,
@@ -489,6 +548,7 @@ function QuoteGeneratorPage() {
       total,
       isRecommended: formData.isRecommended,
       isRenewal: formData.isRenewal,
+      advisorComment: advisorComment, // Save per-quote comment
     };
 
     setQuotes([...quotes, newQuote]);
@@ -500,53 +560,40 @@ function QuoteGeneratorPage() {
     setFormData({
       ...formData,
       insuranceCompany: '',
-      thirdPartyLiability: 'UPTO AED 1 Million',
+      productType: '',
+      repairType: '',
+      thirdPartyLiability: 'NA',
       excess: 0,
       premium: 0,
       isRecommended: false,
       isRenewal: false,
     });
     setSelectedCoverage([]);
-    setOmanCover('No');
-    setWindscreenExcess('UPTO AED 1000');
+    setOmanCover('NA');
+    setWindscreenExcess('NA');
+    setAdvisorComment(''); // Clear comment
     setVat(0);
     setTotal(0);
   };
 
   const removeQuote = (id: string) => {
     setQuotes(quotes.filter(q => q.id !== id));
+    if (editingQuoteId === id) setEditingQuoteId(null);
   };
 
-  const addDemoData = () => {
-    const demoQuotes: Quote[] = [
-      { company: 'AXA INSURANCE (GULF) B.S.C.(C)', premium: 2400, excess: 1000, isRecommended: true, isRenewal: false },
-      { company: 'DUBAI INSURANCE CO. PSC', premium: 2200, excess: 800, isRecommended: false, isRenewal: true },
-      { company: 'Liva Insurance', premium: 2600, excess: 1200, isRecommended: false, isRenewal: false }
-    ].map((data, index) => {
-      const { vat: demoVat, total: demoTotal } = calculateVAT(data.premium);
-      return {
-        id: (Date.now() + index).toString(),
-        customerName: 'John Doe',
-        make: 'Toyota',
-        model: 'Camry',
-        year: '2020',
-        value: 'AED 85,000',
-        repairType: 'Agency',
-        company: data.company,
-        thirdPartyLiability: 'UPTO AED 1 Million',
-        coverageOptions: getCoverageDefaults(data.company),
-        omanCover: 'Yes',
-        windscreenExcess: 'UPTO AED 1000',
-        excess: data.excess,
-        premium: data.premium,
-        vat: demoVat,
-        total: demoTotal,
-        isRecommended: data.isRecommended,
-        isRenewal: data.isRenewal,
-      };
-    });
-    setQuotes(demoQuotes);
-    alert('Demo data added!');
+  const updateQuoteField = (id: string, field: keyof Quote, value: any) => {
+    setQuotes(quotes.map(q => {
+      if (q.id === id) {
+        const updated = { ...q, [field]: value };
+        if (field === 'premium') {
+          const { vat, total } = calculateVAT(value as number);
+          updated.vat = vat;
+          updated.total = total;
+        }
+        return updated;
+      }
+      return q;
+    }));
   };
 
   const saveAndDownload = async () => {
@@ -559,13 +606,11 @@ function QuoteGeneratorPage() {
     const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
     const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
     
-    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber, advisorComment);
+    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber);
     const fileName = `NSIB_${quotes[0].customerName.replace(/\s/g, '_')}_${quotes[0].make}_${quotes[0].model}_${referenceNumber}.html`;
     
-    // 1. Download the file immediately
     downloadHTMLFile(htmlContent, fileName);
     
-    // 2. Upload to Vercel Blob
     try {
       alert('Downloading file and uploading to online storage...');
       
@@ -576,8 +621,7 @@ function QuoteGeneratorPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        throw new Error(`HTTP ${response.status}`);
       }
 
       const result = await response.json();
@@ -586,25 +630,22 @@ function QuoteGeneratorPage() {
         throw new Error(result.error);
       }
       
-      // 3. Save to history
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
       const newComparison: SavedComparison = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
         vehicle: `${quotes[0].make} ${quotes[0].model}`,
         quotes: quotes,
-        advisorComment: advisorComment,
         referenceNumber: referenceNumber,
         fileUrl: result.webViewLink,
       };
       savedHistory.unshift(newComparison);
       localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
       
-      alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.webViewLink}\n\nDocument saved to history and accessible online!`);
+      alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.webViewLink}\n\nDocument saved!`);
     } catch (error) {
-      console.error('Error uploading to Vercel Blob:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`⚠️ File downloaded, but upload to online storage failed.\n\nError: ${errorMessage}\n\n💡 Your document has been downloaded successfully.`);
+      console.error('Error:', error);
+      alert(`⚠️ File downloaded, but upload failed.`);
     }
   };
 
@@ -612,13 +653,45 @@ function QuoteGeneratorPage() {
   const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-5">
+      {/* LEFT PANEL - FORM */}
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-150px)] overflow-y-auto">
         <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Add Quote</h2>
 
+        {/* Business Type */}
+        <div className="bg-indigo-50 p-4 rounded-lg mb-4 border-2 border-indigo-200">
+          <label className="block text-sm font-bold mb-2 text-gray-800">Business Type *</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setBusinessType('Private')}
+              className={`p-3 rounded-lg font-bold transition ${businessType === 'Private' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border-2 border-gray-300'}`}
+            >
+              🚗 Private
+            </button>
+            <button
+              onClick={() => setBusinessType('Commercial')}
+              className={`p-3 rounded-lg font-bold transition ${businessType === 'Commercial' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border-2 border-gray-300'}`}
+            >
+              🚚 Commercial
+            </button>
+          </div>
+        </div>
+
+        {/* Vehicle Information */}
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
           <h3 className="font-bold text-sm mb-3 text-gray-800">Vehicle Information</h3>
           
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Enquiry Number *</label>
+            <input
+              type="text"
+              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
+              placeholder="Enter enquiry number"
+              value={formData.enquiryNumber}
+              onChange={(e) => setFormData({ ...formData, enquiryNumber: e.target.value })}
+            />
+          </div>
+
           <div className="mb-3">
             <label className="block text-xs font-bold mb-1 text-gray-800">Customer Name *</label>
             <input
@@ -646,47 +719,66 @@ function QuoteGeneratorPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold mb-1 text-gray-800">Year Model</label>
-            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.yearModel} onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}>
-              <option value="">Select Year</option>
-              {YEARS.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Year Model</label>
+              <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.yearModel} onChange={(e) => setFormData({ ...formData, yearModel: e.target.value })}>
+                <option value="">Select Year</option>
+                {YEARS.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
+              <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="e.g., AED 85,000" value={formData.vehicleValue} onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })} />
+            </div>
           </div>
         </div>
 
+        {/* Quote Details */}
         <div className="bg-gray-50 p-4 rounded-lg mb-4">
           <h3 className="font-bold text-sm mb-3 text-gray-800">Quote Details</h3>
-          
-          <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
-            <input type="text" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="e.g., AED 85,000" value={formData.vehicleValue} onChange={(e) => setFormData({ ...formData, vehicleValue: e.target.value })} />
-          </div>
-
-          <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
-            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
-              <option value="">Select Type</option>
-	      <option value="NA">NA</option>
-              <option value="Agency">Agency</option>
-              <option value="Non-Agency">Non-Agency</option>
-            </select>
-          </div>
 
           <div className="mb-3">
             <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
             <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.insuranceCompany} onChange={(e) => handleCompanyChange(e.target.value)}>
               <option value="">Select Company</option>
-              {INSURANCE_COMPANIES.map(company => (
+              {insuranceCompanies.map(company => (
                 <option key={company} value={company}>{company}</option>
               ))}
             </select>
           </div>
 
+          {hasProductTypes && (
+            <div className="mb-3">
+              <label className="block text-xs font-bold mb-1 text-gray-800">Product Type *</label>
+              <select 
+                className="w-full p-2 border rounded text-sm text-gray-900 bg-white" 
+                value={formData.productType} 
+                onChange={(e) => handleProductTypeChange(e.target.value)}
+              >
+                <option value="">Select Product Type</option>
+                {COMPANY_PRODUCT_TYPES[formData.insuranceCompany].map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Third Party Property Liability</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
+            <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.repairType} onChange={(e) => setFormData({ ...formData, repairType: e.target.value })}>
+              <option value="">Select Type</option>
+              <option value="NA">NA</option>
+              <option value="Agency">Agency</option>
+              <option value="Non-Agency">Non-Agency</option>
+              <option value="Agency/Non-Agency">Agency/Non-Agency</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Third Party Liability</label>
             <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={formData.thirdPartyLiability} onChange={(e) => setFormData({ ...formData, thirdPartyLiability: e.target.value })}>
               {THIRD_PARTY_LIABILITY_OPTIONS.map(option => (
                 <option key={option} value={option}>{option}</option>
@@ -695,19 +787,7 @@ function QuoteGeneratorPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {COVERAGE_OPTIONS.map(option => (
-                <label key={option.id} className="flex items-center gap-2 p-2 bg-white rounded text-xs cursor-pointer hover:bg-gray-100 text-gray-800">
-                  <input type="checkbox" checked={selectedCoverage.includes(option.label)} onChange={() => handleCoverageToggle(option.label)} />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Oman Cover (Own damage only)</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Oman Cover</label>
             <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={omanCover} onChange={(e) => setOmanCover(e.target.value)}>
               {OMAN_COVER_OPTIONS.map(option => (
                 <option key={option} value={option}>{option}</option>
@@ -716,12 +796,24 @@ function QuoteGeneratorPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Excess for Windscreen Damage</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">Windscreen Excess</label>
             <select className="w-full p-2 border rounded text-sm text-gray-900 bg-white" value={windscreenExcess} onChange={(e) => setWindscreenExcess(e.target.value)}>
               {WINDSCREEN_EXCESS_OPTIONS.map(option => (
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto bg-white p-2 rounded border">
+              {COVERAGE_OPTIONS.map(option => (
+                <label key={option.id} className="flex items-center gap-2 text-xs cursor-pointer text-gray-800">
+                  <input type="checkbox" checked={selectedCoverage.includes(option.label)} onChange={() => handleCoverageToggle(option.label)} />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
@@ -731,29 +823,26 @@ function QuoteGeneratorPage() {
             </div>
             <div>
               <label className="block text-xs font-bold mb-1 text-gray-800">Premium *</label>
-              <input type="number" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="2500" value={formData.premium || ''} onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)} />
+              <input type="number" step="0.01" className="w-full p-2 border rounded text-sm text-gray-900 bg-white" placeholder="2500.00" value={formData.premium || ''} onChange={(e) => handlePremiumChange(parseFloat(e.target.value) || 0)} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
-              <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 text-gray-900" value={vat} readOnly />
+              <input type="text" className="w-full p-2 border rounded text-sm bg-gray-100 text-gray-900 font-semibold" value={vat.toFixed(2)} readOnly />
             </div>
             <div>
               <label className="block text-xs font-bold mb-1 text-gray-800">Total Amount</label>
-              <input type="number" className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600" value={total} readOnly />
+              <input type="text" className="w-full p-2 border rounded text-sm bg-gray-100 font-bold text-indigo-600" value={total.toFixed(2)} readOnly />
             </div>
           </div>
 
-          <div className="mb-3">
+          <div className="flex gap-3 mb-3">
             <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
               <input type="checkbox" checked={formData.isRecommended} onChange={(e) => setFormData({ ...formData, isRecommended: e.target.checked })} />
-              Mark as Recommended
+              Recommended
             </label>
-          </div>
-
-          <div className="mb-3">
             <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
               <input type="checkbox" checked={formData.isRenewal} onChange={(e) => setFormData({ ...formData, isRenewal: e.target.checked })} />
               Renewal
@@ -761,167 +850,350 @@ function QuoteGeneratorPage() {
           </div>
 
           <div className="mb-3">
-            <label className="block text-xs font-bold mb-1 text-gray-800">Advisor Comment</label>
+            <label className="block text-xs font-bold mb-1 text-gray-800">
+              Advisor Comment *
+              <span className="text-red-500 ml-1">Required for this quote</span>
+            </label>
             <textarea
-              className="w-full p-2 border rounded text-sm text-gray-900 bg-white"
-              placeholder="Enter advisor comments for this comparison..."
+              className="w-full p-2 border-2 rounded text-sm text-gray-900 bg-white focus:border-indigo-500"
+              placeholder="Enter specific comment for this insurance company..."
               rows={3}
               value={advisorComment}
               onChange={(e) => setAdvisorComment(e.target.value)}
             />
           </div>
 
-          <button onClick={addQuote} className="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition mb-2">
-            Add Quote
-          </button>
-          
-          <button onClick={addDemoData} className="w-full bg-yellow-500 text-gray-900 p-2 rounded-lg font-bold hover:bg-yellow-600 transition">
-            Add Demo Data
+          <button onClick={addQuote} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-700 transition">
+            ➕ Add Quote to Comparison
           </button>
         </div>
 
         {quotes.length > 0 && (
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h4 className="text-sm font-bold text-green-800 mb-2">Current Comparison ({quotes.length})</h4>
-            <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
-              {quotes.map(quote => (
-                <div key={quote.id} className="bg-white p-2 rounded flex justify-between items-center border-l-4 border-indigo-600">
-                  <div className="flex-1">
-                    <div className="font-bold text-xs text-indigo-600">{quote.company}</div>
-                    <div className="text-xs text-gray-600">
-                      AED {quote.total.toLocaleString()} 
-                      {quote.isRecommended && ' ⭐'}
-                      {quote.isRenewal && ' 🔄'}
-                    </div>
-                  </div>
-                  <button onClick={() => removeQuote(quote.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button onClick={saveAndDownload} className="w-full bg-green-600 text-white p-2 rounded-lg font-bold hover:bg-green-700 transition">
-              💾 Save and Download
-            </button>
-          </div>
+          <button onClick={saveAndDownload} className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
+            💾 Save & Download ({quotes.length} quotes)
+          </button>
         )}
       </div>
 
+      {/* RIGHT PANEL - COLUMN COMPARISON */}
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-150px)] overflow-auto">
-        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Live Comparison</h2>
+        <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Live Comparison ({quotes.length})</h2>
         
-        {sortedQuotes.length === 0 ? (
-          <div className="text-center text-gray-400 italic py-20">Add quotes to see comparison table</div>
+        {quotes.length === 0 ? (
+          <div className="text-center text-gray-400 italic py-20">
+            Add quotes to see comparison table
+          </div>
         ) : (
-          <>
-            <div className="bg-gray-50 p-4 rounded-lg mb-4 text-center border-l-4 border-indigo-600">
-              <h3 className="font-bold text-base mb-1 text-gray-900">Customer: {sortedQuotes[0].customerName}</h3>
-              <h3 className="font-bold text-base mb-1 text-gray-900">Vehicle: {sortedQuotes[0].make} {sortedQuotes[0].model} ({sortedQuotes[0].year})</h3>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className="bg-indigo-600 text-white p-3 border text-left w-44">BENEFITS</th>
-                    {sortedQuotes.map((q) => (
-                      <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center">
-                        <div className="text-sm mb-1">{q.company.substring(0, 25)}</div>
-                        {q.isRenewal && (
-                          <div className="bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold inline-block mt-1">
-                            RENEWAL
-                          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="sticky top-0 bg-white z-20">
+                  <th className="bg-gray-200 p-2 border text-left sticky left-0 z-30 min-w-[150px] text-gray-900">Field</th>
+                  {sortedQuotes.map((q, idx) => (
+                    <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center min-w-[180px]">
+                      <div className="font-bold text-sm mb-1">{q.company}</div>
+                      {q.productType && <div className="text-xs mb-1 opacity-90">{q.productType.substring(0, 30)}{q.productType.length > 30 ? '...' : ''}</div>}
+                      {idx === 0 && <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold inline-block mb-2">BEST PRICE</div>}
+                      <div className="text-base font-bold">AED {q.total.toFixed(2)}</div>
+                      <div className="flex gap-1 justify-center mt-2">
+                        {editingQuoteId === q.id ? (
+                          <button onClick={() => setEditingQuoteId(null)} className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">
+                            ✓ Done
+                          </button>
+                        ) : (
+                          <button onClick={() => setEditingQuoteId(q.id)} className="bg-yellow-500 text-gray-900 px-2 py-1 rounded text-xs hover:bg-yellow-600">
+                            ✏️ Edit
+                          </button>
                         )}
-                        {q.isRecommended && (
-                          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold inline-block mt-1">
-                            RECOMMENDED
-                          </div>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Repair Type</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.repairType}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Vehicle Value</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.value}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Third Party Liability</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.thirdPartyLiability}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Oman Cover</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.omanCover}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Windscreen Excess</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900">{q.windscreenExcess}</td>
-                    ))}
-                  </tr>
-                  {allCoverageOptions.map(option => (
-                    <tr key={option}>
-                      <td className="p-2 border font-bold bg-gray-50 text-gray-900">{option}</td>
-                      {sortedQuotes.map(q => {
-                        const included = q.coverageOptions.includes(option);
-                        return (
-                          <td key={q.id} className={`p-2 border text-center font-bold ${included ? 'text-green-600' : 'text-red-600'}`}>
-                            {included ? 'YES' : 'NO'}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                        <button onClick={() => removeQuote(q.id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+                          🗑️
+                        </button>
+                      </div>
+                    </th>
                   ))}
-                  <tr className="bg-blue-100">
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Excess</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.excess.toLocaleString()}</td>
-                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {/* Company */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Company</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">{q.company}</td>
+                  ))}
+                </tr>
+
+                {/* Product Type */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Product Type</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900 text-xs">{q.productType || 'N/A'}</td>
+                  ))}
+                </tr>
+
+                {/* Repair Type */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Repair Type</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.repairType} 
+                          onChange={(e) => updateQuoteField(q.id, 'repairType', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          <option value="NA">NA</option>
+                          <option value="Agency">Agency</option>
+                          <option value="Non-Agency">Non-Agency</option>
+                          <option value="Agency/Non-Agency">Agency/Non-Agency</option>
+                        </select>
+                      ) : (
+                        q.repairType
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Vehicle Value */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Vehicle Value</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <input 
+                          type="text" 
+                          value={q.value}
+                          onChange={(e) => updateQuoteField(q.id, 'value', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        />
+                      ) : (
+                        q.value
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Third Party Liability */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Third Party Liability</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.thirdPartyLiability}
+                          onChange={(e) => updateQuoteField(q.id, 'thirdPartyLiability', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          {THIRD_PARTY_LIABILITY_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        q.thirdPartyLiability
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Oman Cover */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Oman Cover</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.omanCover}
+                          onChange={(e) => updateQuoteField(q.id, 'omanCover', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          {OMAN_COVER_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        q.omanCover
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Windscreen Excess */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Windscreen Excess</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.windscreenExcess}
+                          onChange={(e) => updateQuoteField(q.id, 'windscreenExcess', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          {WINDSCREEN_EXCESS_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        q.windscreenExcess
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Coverage Options */}
+                {allCoverageOptions.map(option => (
+                  <tr key={option}>
+                    <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">{option}</td>
+                    {sortedQuotes.map(q => {
+                      const included = q.coverageOptions.includes(option);
+                      return (
+                        <td key={q.id} className="p-2 border text-center bg-white">
+                          {editingQuoteId === q.id ? (
+                            <input 
+                              type="checkbox"
+                              checked={included}
+                              onChange={(e) => {
+                                const newOptions = e.target.checked 
+                                  ? [...q.coverageOptions, option]
+                                  : q.coverageOptions.filter(o => o !== option);
+                                updateQuoteField(q.id, 'coverageOptions', newOptions);
+                              }}
+                            />
+                          ) : (
+                            <span className={included ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                              {included ? 'YES' : 'NO'}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
-                  <tr className="bg-blue-100">
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">Premium</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.premium.toLocaleString()}</td>
-                    ))}
-                  </tr>
-                  <tr className="bg-blue-100">
-                    <td className="p-2 border font-bold bg-gray-50 text-gray-900">VAT (5%)</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center text-gray-900 bg-blue-100">AED {q.vat.toLocaleString()}</td>
-                    ))}
-                  </tr>
-                  <tr className="bg-blue-100">
-                    <td className="p-2 border font-bold text-gray-900 bg-gray-50">Total Premium</td>
-                    {sortedQuotes.map(q => (
-                      <td key={q.id} className="p-2 border text-center font-bold text-gray-900 bg-blue-100">AED {q.total.toLocaleString()}</td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </>
+                ))}
+
+                {/* Excess */}
+                <tr className="bg-blue-50">
+                  <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">Excess</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-blue-50 text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <input 
+                          type="number"
+                          value={q.excess}
+                          onChange={(e) => updateQuoteField(q.id, 'excess', parseFloat(e.target.value) || 0)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        />
+                      ) : (
+                        `AED ${q.excess.toLocaleString()}`
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Premium */}
+                <tr className="bg-blue-50">
+                  <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">Premium</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-blue-50 text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <input 
+                          type="number"
+                          step="0.01"
+                          value={q.premium}
+                          onChange={(e) => updateQuoteField(q.id, 'premium', parseFloat(e.target.value) || 0)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        />
+                      ) : (
+                        `AED ${q.premium.toFixed(2)}`
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* VAT */}
+                <tr className="bg-blue-50">
+                  <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">VAT (5%)</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-blue-50 text-gray-900">
+                      AED {q.vat.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Total */}
+                <tr className="bg-blue-100">
+                  <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">Total Premium</td>
+                  {sortedQuotes.map((q, idx) => (
+                    <td key={q.id} className={`p-2 border text-center font-bold ${idx === 0 ? 'bg-green-100 text-green-800 text-base' : 'bg-blue-100 text-gray-900'}`}>
+                      AED {q.total.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Advisor Comment */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Advisor Comment</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <textarea 
+                          value={q.advisorComment}
+                          onChange={(e) => updateQuoteField(q.id, 'advisorComment', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                          rows={2}
+                        />
+                      ) : (
+                        <div className="text-xs text-left">{q.advisorComment}</div>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Badges */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Status</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white">
+                      <div className="flex flex-col gap-1">
+                        {editingQuoteId === q.id ? (
+                          <>
+                            <label className="flex items-center justify-center gap-1 text-xs text-gray-900">
+                              <input 
+                                type="checkbox"
+                                checked={q.isRecommended}
+                                onChange={(e) => updateQuoteField(q.id, 'isRecommended', e.target.checked)}
+                              />
+                              Recommended
+                            </label>
+                            <label className="flex items-center justify-center gap-1 text-xs text-gray-900">
+                              <input 
+                                type="checkbox"
+                                checked={q.isRenewal}
+                                onChange={(e) => updateQuoteField(q.id, 'isRenewal', e.target.checked)}
+                              />
+                              Renewal
+                            </label>
+                          </>
+                        ) : (
+                          <>
+                            {q.isRecommended && <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs">⭐ Recommended</span>}
+                            {q.isRenewal && <span className="bg-yellow-400 text-gray-900 px-2 py-1 rounded-full text-xs">🔄 Renewal</span>}
+                            {!q.isRecommended && !q.isRenewal && <span className="text-gray-400 text-xs">-</span>}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
+// ============ SAVED HISTORY PAGE ============
 function SavedHistoryPage() {
   const [history, setHistory] = useState<SavedComparison[]>([]);
-  const [editingComparison, setEditingComparison] = useState<SavedComparison | null>(null);
 
   useEffect(() => {
     loadHistory();
@@ -933,139 +1205,21 @@ function SavedHistoryPage() {
   };
 
   const deleteComparison = (id: string) => {
-    if (!confirm('Delete this comparison? This cannot be undone.')) return;
-    
+    if (!confirm('Delete this comparison?')) return;
     const updated = history.filter(h => h.id !== id);
     localStorage.setItem('quotesHistory', JSON.stringify(updated));
     setHistory(updated);
-  };
-
-  const startEdit = (comparison: SavedComparison) => {
-    setEditingComparison({ ...comparison });
-  };
-
-  const cancelEdit = () => {
-    setEditingComparison(null);
-  };
-
-  const addNewQuote = () => {
-    if (!editingComparison) return;
-
-    const newQuote: Quote = {
-      id: Date.now().toString(),
-      customerName: editingComparison.quotes[0].customerName,
-      make: editingComparison.quotes[0].make,
-      model: editingComparison.quotes[0].model,
-      year: editingComparison.quotes[0].year,
-      value: editingComparison.quotes[0].value,
-      repairType: 'NA',  // Changed from 'Not specified'
-      company: '',
-      thirdPartyLiability: 'NA',  // Changed from 'UPTO AED 1 Million'
-      coverageOptions: [],
-      omanCover: 'NA',  // Changed from 'No'
-      windscreenExcess: 'NA',  // Changed from 'UPTO AED 1000'
-      excess: 0,
-      premium: 0,
-      vat: 0,
-      total: 0,
-      isRecommended: false,
-      isRenewal: false,
-    };
-
-    setEditingComparison({
-      ...editingComparison,
-      quotes: [...editingComparison.quotes, newQuote]
-    });
-  };
-
-  const deleteQuote = (quoteId: string) => {
-    if (!editingComparison) return;
-
-    if (editingComparison.quotes.length <= 1) {
-      alert('Cannot delete the last quote. A comparison must have at least one quote.');
-      return;
-    }
-
-    if (!confirm('Delete this quote from the comparison?')) return;
-
-    setEditingComparison({
-      ...editingComparison,
-      quotes: editingComparison.quotes.filter(q => q.id !== quoteId)
-    });
   };
 
   const downloadComparison = (comparison: SavedComparison) => {
     const sortedQuotes = [...comparison.quotes].sort((a, b) => a.total - b.total);
     const allCoverageOptions = [...new Set(comparison.quotes.flatMap(q => q.coverageOptions))];
     
-    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, comparison.referenceNumber, comparison.advisorComment || '');
+    const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, comparison.referenceNumber);
     const fileName = `NSIB_${comparison.quotes[0].customerName.replace(/\s/g, '_')}_${comparison.quotes[0].make}_${comparison.quotes[0].model}_${comparison.referenceNumber}.html`;
     
     downloadHTMLFile(htmlContent, fileName);
     alert(`✅ Downloaded: ${fileName}`);
-  };
-
-  const saveEdit = async () => {
-    if (!editingComparison) return;
-
-    // Validate that all quotes have company names
-    const hasEmptyCompany = editingComparison.quotes.some(q => !q.company || q.company.trim() === '');
-    if (hasEmptyCompany) {
-      alert('Please fill in the Insurance Company name for all quotes before saving.');
-      return;
-    }
-
-    alert('Saving changes and re-uploading to Vercel Blob...');
-
-    const updated = history.map(h => 
-      h.id === editingComparison.id ? editingComparison : h
-    );
-    localStorage.setItem('quotesHistory', JSON.stringify(updated));
-    setHistory(updated);
-
-    try {
-      const sortedQuotes = [...editingComparison.quotes].sort((a, b) => a.total - b.total);
-      const allCoverageOptions = [...new Set(editingComparison.quotes.flatMap(q => q.coverageOptions))];
-      
-      const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, editingComparison.referenceNumber, editingComparison.advisorComment || '');
-      
-      const timestamp = Date.now();
-      const fileName = `NSIB_${editingComparison.quotes[0].customerName.replace(/\s/g, '_')}_${editingComparison.quotes[0].make}_${editingComparison.quotes[0].model}_${editingComparison.referenceNumber}_UPDATED_${timestamp}.html`;
-      
-      console.log('Uploading to Vercel Blob:', fileName);
-      
-      const response = await fetch('/api/upload-to-drive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName, htmlContent }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('Vercel Blob upload result:', result);
-
-      if (result.success && result.webViewLink) {
-        const updatedComparison = { ...editingComparison, fileUrl: result.webViewLink };
-        const updatedHistory = history.map(h => 
-          h.id === editingComparison.id ? updatedComparison : h
-        );
-        localStorage.setItem('quotesHistory', JSON.stringify(updatedHistory));
-        setHistory(updatedHistory);
-        setEditingComparison(null);
-        alert(`✅ Changes saved successfully!\n\n🔗 Updated document URL:\n${result.webViewLink}\n\nNote: A new version was created to preserve history.`);
-      } else {
-        throw new Error(result.error || 'Upload failed - no URL returned');
-      }
-    } catch (error) {
-      console.error('Error uploading to Vercel Blob:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`⚠️ Changes saved locally, but failed to update online version.\n\nError: ${errorMessage}\n\n💡 Your changes are saved locally. The old online version is still accessible.`);
-      setEditingComparison(null);
-    }
   };
 
   const formatDate = (isoString: string) => {
@@ -1079,347 +1233,74 @@ function SavedHistoryPage() {
     });
   };
 
-  if (editingComparison) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5 overflow-y-auto">
-        <div className="bg-white rounded-xl p-6 max-w-5xl w-full my-8 max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Edit Comparison</h2>
-            <button 
-              onClick={addNewQuote}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition"
-            >
-              ➕ Add New Quote
-            </button>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2 text-gray-800">Advisor Comment</label>
-            <textarea
-              className="w-full p-3 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-              rows={4}
-              value={editingComparison.advisorComment || ''}
-              onChange={(e) => setEditingComparison({ ...editingComparison, advisorComment: e.target.value })}
-            />
-          </div>
-
-          <div className="mb-4">
-            <h3 className="text-lg font-bold mb-3 text-gray-800">Quotes ({editingComparison.quotes.length})</h3>
-            <div className="space-y-4">
-              {editingComparison.quotes.map((quote, idx) => (
-                <div key={quote.id} className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 relative">
-                  <button
-                    onClick={() => deleteQuote(quote.id)}
-                    className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-700 transition"
-                    title="Delete this quote"
-                  >
-                    🗑️ Delete Quote
-                  </button>
-
-                  <div className="mb-3 pr-32">
-                    <label className="block text-xs font-bold mb-1 text-gray-800">Insurance Company *</label>
-                    <select
-                      className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                      value={quote.company}
-                      onChange={(e) => {
-                        const newQuotes = [...editingComparison.quotes];
-                        const selectedCompany = e.target.value;
-                        newQuotes[idx] = { 
-                          ...quote, 
-                          company: selectedCompany,
-                          coverageOptions: selectedCompany ? getCoverageDefaults(selectedCompany) : []
-                        };
-                        setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                      }}
-                    >
-                      <option value="">Select Insurance Company</option>
-                      {INSURANCE_COMPANIES.map(company => (
-                        <option key={company} value={company}>{company}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Repair Type</label>
-                      <select
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.repairType}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, repairType: e.target.value };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      >
-			<option value="NA">NA</option>
-                        <option value="Agency">Agency</option>
-                        <option value="Non-Agency">Non-Agency</option>
-                        <option value="Not specified">Not specified</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Vehicle Value</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.value}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, value: e.target.value };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Excess</label>
-                      <input
-                        type="number"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.excess}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, excess: parseFloat(e.target.value) || 0 };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Third Party Liability</label>
-                      <select
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.thirdPartyLiability}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, thirdPartyLiability: e.target.value };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      >
-                        {THIRD_PARTY_LIABILITY_OPTIONS.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Oman Cover</label>
-                      <select
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.omanCover}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, omanCover: e.target.value };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      >
-                        {OMAN_COVER_OPTIONS.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Windscreen Excess</label>
-                      <select
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.windscreenExcess}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, windscreenExcess: e.target.value };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      >
-                        {WINDSCREEN_EXCESS_OPTIONS.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="block text-xs font-bold mb-1 text-gray-800">Coverage Options</label>
-                    <div className="grid grid-cols-2 gap-2 bg-white p-2 rounded border max-h-48 overflow-y-auto">
-                      {COVERAGE_OPTIONS.map(option => (
-                        <label key={option.id} className="flex items-center gap-2 text-xs text-gray-800 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={quote.coverageOptions.includes(option.label)}
-                            onChange={(e) => {
-                              const newQuotes = [...editingComparison.quotes];
-                              const currentOptions = quote.coverageOptions;
-                              const newOptions = e.target.checked
-                                ? [...currentOptions, option.label]
-                                : currentOptions.filter(o => o !== option.label);
-                              newQuotes[idx] = { ...quote, coverageOptions: newOptions };
-                              setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                            }}
-                          />
-                          <span>{option.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Premium</label>
-                      <input
-                        type="number"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:border-indigo-500 focus:outline-none"
-                        value={quote.premium}
-                        onChange={(e) => {
-                          const newPremium = parseFloat(e.target.value) || 0;
-                          const { vat, total } = calculateVAT(newPremium);
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, premium: newPremium, vat, total };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">VAT (5%)</label>
-                      <input
-                        type="number"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-gray-700 bg-gray-100 font-semibold"
-                        value={quote.vat}
-                        readOnly
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1 text-gray-800">Total</label>
-                      <input
-                        type="number"
-                        className="w-full p-2 border-2 border-gray-300 rounded text-sm text-indigo-700 bg-indigo-50 font-bold"
-                        value={quote.total}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={quote.isRecommended}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, isRecommended: e.target.checked };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                      Recommended
-                    </label>
-                    <label className="flex items-center gap-2 text-xs font-bold text-gray-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={quote.isRenewal}
-                        onChange={(e) => {
-                          const newQuotes = [...editingComparison.quotes];
-                          newQuotes[idx] = { ...quote, isRenewal: e.target.checked };
-                          setEditingComparison({ ...editingComparison, quotes: newQuotes });
-                        }}
-                      />
-                      Renewal
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3 sticky bottom-0 bg-white pt-4 border-t-2">
-            <button onClick={saveEdit} className="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
-              ✓ Save Changes & Re-upload
-            </button>
-            <button onClick={cancelEdit} className="flex-1 bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600 transition">
-              ✗ Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-5">
-      <div className="bg-white rounded-xl p-5 shadow-2xl">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
-        <p className="text-sm text-gray-600 mb-4">📁 All comparisons are saved online with public URLs</p>
-        
-        {history.length === 0 ? (
-          <div className="text-center text-gray-400 italic py-20">
-            No saved comparisons yet. Create a comparison and click &quot;Save and Download&quot; to see it here.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {history.map(comparison => (
-              <div key={comparison.id} className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-200 hover:border-indigo-400 transition shadow-sm hover:shadow-md">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="font-bold text-lg text-gray-900">{comparison.vehicle}</div>
-                    <div className="text-xs text-gray-500">{formatDate(comparison.date)}</div>
-                    <div className="text-xs text-indigo-600 font-mono">Ref: {comparison.referenceNumber}</div>
-                  </div>
-                </div>
-                
-                <div className="mb-3">
-                  <div className="text-sm text-gray-700 mb-2"><strong>Quotes:</strong> {comparison.quotes.length}</div>
-                  <div className="text-xs text-gray-600">
-                    {comparison.quotes.map(q => (
-                      <div key={q.id} className="truncate">
-                        • {q.company} - AED {q.total.toLocaleString()}
-                        {q.isRenewal && ' 🔄'}
-                        {q.isRecommended && ' ⭐'}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {comparison.advisorComment && (
-                  <div className="mb-3 p-2 bg-yellow-50 rounded text-xs text-gray-700 border-l-2 border-yellow-400">
-                    <strong>Comment:</strong> {comparison.advisorComment.substring(0, 100)}{comparison.advisorComment.length > 100 ? '...' : ''}
-                  </div>
-                )}
-                
-                <div className="flex gap-2 flex-wrap">
-                  {comparison.fileUrl && (
-                    <a 
-                      href={comparison.fileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
-                    >
-                      🔗 View Online
-                    </a>
-                  )}
-                  <button 
-                    onClick={() => downloadComparison(comparison)} 
-                    className="flex-1 bg-purple-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-purple-700 transition"
-                  >
-                    📥 Download
-                  </button>
-                  <button onClick={() => startEdit(comparison)} className="bg-yellow-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-yellow-700 transition">
-                    ✏️ Edit
-                  </button>
-                  <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
-                    🗑️
-                  </button>
+    <div className="bg-white rounded-xl p-5 shadow-2xl">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
+      <p className="text-sm text-gray-600 mb-4">📁 All comparisons saved locally and in cloud storage</p>
+      
+      {history.length === 0 ? (
+        <div className="text-center text-gray-400 italic py-20">
+          No saved comparisons yet. Create a comparison and save it to see it here.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {history.map(comparison => (
+            <div key={comparison.id} className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-200 hover:border-indigo-400 transition shadow-sm hover:shadow-md">
+              <div className="mb-3">
+                <div className="font-bold text-lg text-gray-900">{comparison.vehicle}</div>
+                <div className="text-xs text-gray-500">{formatDate(comparison.date)}</div>
+                <div className="text-xs text-indigo-600 font-mono">Ref: {comparison.referenceNumber}</div>
+              </div>
+              
+              <div className="mb-3">
+                <div className="text-sm text-gray-700 mb-2"><strong>Quotes:</strong> {comparison.quotes.length}</div>
+                <div className="text-xs text-gray-600 max-h-24 overflow-y-auto">
+                  {comparison.quotes.map(q => (
+                    <div key={q.id} className="truncate">
+                      • {q.company} - AED {q.total.toFixed(2)}
+                      {q.isRenewal && ' 🔄'}
+                      {q.isRecommended && ' ⭐'}
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              
+              <div className="flex gap-2 flex-wrap">
+                {comparison.fileUrl && (
+                  <a 
+                    href={comparison.fileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
+                  >
+                    🔗 View Online
+                  </a>
+                )}
+                <button 
+                  onClick={() => downloadComparison(comparison)} 
+                  className="flex-1 bg-purple-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-purple-700 transition"
+                >
+                  📥 Download
+                </button>
+                <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
+// ============ MAIN APP ============
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'generator' | 'history'>('generator');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-5">
-      <div className="max-w-[1600px] mx-auto">
+      <div className="max-w-[1800px] mx-auto">
         <div className="text-center mb-6">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">NSIB Insurance Quote System</h1>
           
