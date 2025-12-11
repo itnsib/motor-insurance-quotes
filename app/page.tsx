@@ -25,7 +25,7 @@ interface Quote {
   total: number;
   isRecommended: boolean;
   isRenewal: boolean;
-  advisorComment: string; // NEW: Per-quote comment
+  advisorComment: string;
 }
 
 interface SavedComparison {
@@ -396,7 +396,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
             </tbody>
         </table>
         
-        ${sortedQuotes.map((q, idx) => q.advisorComment ? `
+        ${sortedQuotes.map(q => q.advisorComment ? `
         <div class="advisor-comment">
             <h4>Advisor Comment - ${q.company}</h4>
             <p>${q.advisorComment}</p>
@@ -460,7 +460,7 @@ function QuoteGeneratorPage() {
   const [selectedCoverage, setSelectedCoverage] = useState<string[]>([]);
   const [omanCover, setOmanCover] = useState('NA');
   const [windscreenExcess, setWindscreenExcess] = useState('NA');
-  const [advisorComment, setAdvisorComment] = useState(''); // Per-quote comment
+  const [advisorComment, setAdvisorComment] = useState('');
   const [vat, setVat] = useState(0);
   const [total, setTotal] = useState(0);
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
@@ -510,7 +510,6 @@ function QuoteGeneratorPage() {
   };
 
   const addQuote = () => {
-    // Validation
     if (!formData.enquiryNumber || !formData.customerName || !formData.vehicleMake || !formData.vehicleModel || !formData.insuranceCompany || !formData.premium) {
       alert('Please fill required fields: Enquiry Number, Name, Make, Model, Company, and Premium');
       return;
@@ -548,7 +547,7 @@ function QuoteGeneratorPage() {
       total,
       isRecommended: formData.isRecommended,
       isRenewal: formData.isRenewal,
-      advisorComment: advisorComment, // Save per-quote comment
+      advisorComment: advisorComment,
     };
 
     setQuotes([...quotes, newQuote]);
@@ -571,7 +570,7 @@ function QuoteGeneratorPage() {
     setSelectedCoverage([]);
     setOmanCover('NA');
     setWindscreenExcess('NA');
-    setAdvisorComment(''); // Clear comment
+    setAdvisorComment('');
     setVat(0);
     setTotal(0);
   };
@@ -581,7 +580,7 @@ function QuoteGeneratorPage() {
     if (editingQuoteId === id) setEditingQuoteId(null);
   };
 
-  const updateQuoteField = (id: string, field: keyof Quote, value: any) => {
+  const updateQuoteField = (id: string, field: keyof Quote, value: string | number | boolean | string[]) => {
     setQuotes(quotes.map(q => {
       if (q.id === id) {
         const updated = { ...q, [field]: value };
@@ -889,11 +888,11 @@ function QuoteGeneratorPage() {
               <thead>
                 <tr className="sticky top-0 bg-white z-20">
                   <th className="bg-gray-200 p-2 border text-left sticky left-0 z-30 min-w-[150px] text-gray-900">Field</th>
-                  {sortedQuotes.map((q, idx) => (
+                  {sortedQuotes.map((q, index) => (
                     <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center min-w-[180px]">
                       <div className="font-bold text-sm mb-1">{q.company}</div>
                       {q.productType && <div className="text-xs mb-1 opacity-90">{q.productType.substring(0, 30)}{q.productType.length > 30 ? '...' : ''}</div>}
-                      {idx === 0 && <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold inline-block mb-2">BEST PRICE</div>}
+                      {index === 0 && <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold inline-block mb-2">BEST PRICE</div>}
                       <div className="text-base font-bold">AED {q.total.toFixed(2)}</div>
                       <div className="flex gap-1 justify-center mt-2">
                         {editingQuoteId === q.id ? (
@@ -1120,8 +1119,8 @@ function QuoteGeneratorPage() {
                 {/* Total */}
                 <tr className="bg-blue-100">
                   <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">Total Premium</td>
-                  {sortedQuotes.map((q, idx) => (
-                    <td key={q.id} className={`p-2 border text-center font-bold ${idx === 0 ? 'bg-green-100 text-green-800 text-base' : 'bg-blue-100 text-gray-900'}`}>
+                  {sortedQuotes.map((q, index) => (
+                    <td key={q.id} className={`p-2 border text-center font-bold ${index === 0 ? 'bg-green-100 text-green-800 text-base' : 'bg-blue-100 text-gray-900'}`}>
                       AED {q.total.toFixed(2)}
                     </td>
                   ))}
