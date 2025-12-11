@@ -437,8 +437,9 @@ function downloadHTMLFile(htmlContent: string, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-// ============ QUOTE GENERATOR PAGE ============
-function QuoteGeneratorPage() {
+// ============ MAIN APP ============
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<'generator' | 'history'>('generator');
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [businessType, setBusinessType] = useState<'Private' | 'Commercial'>('Private');
   const [formData, setFormData] = useState({
@@ -620,13 +621,14 @@ function QuoteGeneratorPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error || 'Upload failed');
       }
       
       // Save to localStorage with Vercel Blob URL
@@ -644,11 +646,9 @@ function QuoteGeneratorPage() {
       
       alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.url}\n\nYou can continue editing quotes or start a new comparison.`);
       
-      // DON'T clear quotes - keep them for editing
-      // quotes remain in state so user can continue editing
     } catch (error) {
-      console.error('Error:', error);
-      alert(`⚠️ File downloaded locally, but cloud upload failed.\n\nYou can continue editing quotes or start a new comparison.`);
+      console.error('Upload error:', error);
+      alert(`⚠️ File downloaded locally, but cloud upload failed:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nYou can continue editing quotes or start a new comparison.`);
       
       // Still save to history without URL
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
@@ -691,8 +691,184 @@ function QuoteGeneratorPage() {
     setEditingQuoteId(null);
   };
 
+  const loadComparison = (comparison: SavedComparison) => {
+    setQuotes(comparison.quotes);
+    setFormData({
+      enquiryNumber: comparison.quotes[0].enquiryNumber,
+      customerName: comparison.quotes[0].customerName,
+      vehicleMake: comparison.quotes[0].make,
+      vehicleModel: comparison.quotes[0].model,
+      yearModel: comparison.quotes[0].year,
+      vehicleValue: comparison.quotes[0].value,
+      repairType: '',
+      insuranceCompany: '',
+      productType: '',
+      thirdPartyLiability: 'NA',
+      excess: 0,
+      premium: 0,
+      isRecommended: false,
+      isRenewal: false,
+    });
+    setCurrentPage('generator');
+    alert(`✅ Loaded ${comparison.quotes.length} quotes. You can now edit or add more quotes.`);
+  };
+
   const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
   const allCoverageOptions = [...new Set(quotes.flatMap(q => q.coverageOptions))];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-5">
+      <div className="max-w-[1800px] mx-auto">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">NSIB Insurance Quote System</h1>
+          
+          <div className="flex justify-center gap-4">
+            <button 
+              onClick={() => setCurrentPage('generator')} 
+              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'generator' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              📝 Quote Generator
+            </button>
+            <button 
+              onClick={() => setCurrentPage('history')} 
+              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              📁 Saved History
+            </button>
+          </div>
+        </div>
+
+        {currentPage === 'generator' ? (
+          <QuoteGeneratorPage 
+            quotes={quotes}
+            setQuotes={setQuotes}
+            businessType={businessType}
+            setBusinessType={setBusinessType}
+            formData={formData}
+            setFormData={setFormData}
+            selectedCoverage={selectedCoverage}
+            setSelectedCoverage={setSelectedCoverage}
+            omanCover={omanCover}
+            setOmanCover={setOmanCover}
+            windscreenExcess={windscreenExcess}
+            setWindscreenExcess={setWindscreenExcess}
+            advisorComment={advisorComment}
+            setAdvisorComment={setAdvisorComment}
+            vat={vat}
+            setVat={setVat}
+            total={total}
+            setTotal={setTotal}
+            editingQuoteId={editingQuoteId}
+            setEditingQuoteId={setEditingQuoteId}
+            insuranceCompanies={insuranceCompanies}
+            hasProductTypes={hasProductTypes}
+            handlePremiumChange={handlePremiumChange}
+            handleCompanyChange={handleCompanyChange}
+            handleProductTypeChange={handleProductTypeChange}
+            handleCoverageToggle={handleCoverageToggle}
+            addQuote={addQuote}
+            clearForm={clearForm}
+            removeQuote={removeQuote}
+            updateQuoteField={updateQuoteField}
+            saveAndDownload={saveAndDownload}
+            startNewComparison={startNewComparison}
+            sortedQuotes={sortedQuotes}
+            allCoverageOptions={allCoverageOptions}
+          />
+        ) : (
+          <SavedHistoryPage loadComparison={loadComparison} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Component props interfaces
+interface QuoteGeneratorPageProps {
+  quotes: Quote[];
+  setQuotes: (quotes: Quote[]) => void;
+  businessType: 'Private' | 'Commercial';
+  setBusinessType: (type: 'Private' | 'Commercial') => void;
+  formData: {
+    enquiryNumber: string;
+    customerName: string;
+    vehicleMake: string;
+    vehicleModel: string;
+    yearModel: string;
+    vehicleValue: string;
+    repairType: string;
+    insuranceCompany: string;
+    productType: string;
+    thirdPartyLiability: string;
+    excess: number;
+    premium: number;
+    isRecommended: boolean;
+    isRenewal: boolean;
+  };
+  setFormData: (data: QuoteGeneratorPageProps['formData']) => void;
+  selectedCoverage: string[];
+  setSelectedCoverage: (coverage: string[]) => void;
+  omanCover: string;
+  setOmanCover: (cover: string) => void;
+  windscreenExcess: string;
+  setWindscreenExcess: (excess: string) => void;
+  advisorComment: string;
+  setAdvisorComment: (comment: string) => void;
+  vat: number;
+  setVat: (vat: number) => void;
+  total: number;
+  setTotal: (total: number) => void;
+  editingQuoteId: string | null;
+  setEditingQuoteId: (id: string | null) => void;
+  insuranceCompanies: string[];
+  hasProductTypes: boolean;
+  handlePremiumChange: (premium: number) => void;
+  handleCompanyChange: (company: string) => void;
+  handleProductTypeChange: (productType: string) => void;
+  handleCoverageToggle: (label: string) => void;
+  addQuote: () => void;
+  clearForm: () => void;
+  removeQuote: (id: string) => void;
+  updateQuoteField: (id: string, field: keyof Quote, value: string | number | boolean | string[]) => void;
+  saveAndDownload: () => void;
+  startNewComparison: () => void;
+  sortedQuotes: Quote[];
+  allCoverageOptions: string[];
+}
+
+// ============ QUOTE GENERATOR PAGE ============
+function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
+  const {
+    quotes,
+    businessType,
+    setBusinessType,
+    formData,
+    setFormData,
+    selectedCoverage,
+    omanCover,
+    setOmanCover,
+    windscreenExcess,
+    setWindscreenExcess,
+    advisorComment,
+    setAdvisorComment,
+    vat,
+    total,
+    editingQuoteId,
+    setEditingQuoteId,
+    insuranceCompanies,
+    hasProductTypes,
+    handlePremiumChange,
+    handleCompanyChange,
+    handleProductTypeChange,
+    handleCoverageToggle,
+    addQuote,
+    removeQuote,
+    updateQuoteField,
+    saveAndDownload,
+    startNewComparison,
+    sortedQuotes,
+    allCoverageOptions,
+  } = props;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-5">
@@ -961,6 +1137,7 @@ function QuoteGeneratorPage() {
                 </tr>
               </thead>
               <tbody>
+                {/* Comparison table rows - keeping existing implementation */}
                 {/* Company */}
                 <tr>
                   <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Company</td>
@@ -974,29 +1151,6 @@ function QuoteGeneratorPage() {
                   <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Product Type</td>
                   {sortedQuotes.map(q => (
                     <td key={q.id} className="p-2 border text-center bg-white text-gray-900 text-xs">{q.productType || 'N/A'}</td>
-                  ))}
-                </tr>
-
-                {/* Repair Type */}
-                <tr>
-                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Repair Type</td>
-                  {sortedQuotes.map(q => (
-                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
-                      {editingQuoteId === q.id ? (
-                        <select 
-                          value={q.repairType} 
-                          onChange={(e) => updateQuoteField(q.id, 'repairType', e.target.value)}
-                          className="w-full p-1 border rounded text-xs text-gray-900"
-                        >
-                          <option value="NA">NA</option>
-                          <option value="Agency">Agency</option>
-                          <option value="Non-Agency">Non-Agency</option>
-                          <option value="Agency/Non-Agency">Agency/Non-Agency</option>
-                        </select>
-                      ) : (
-                        q.repairType
-                      )}
-                    </td>
                   ))}
                 </tr>
 
@@ -1058,28 +1212,6 @@ function QuoteGeneratorPage() {
                         </select>
                       ) : (
                         q.omanCover
-                      )}
-                    </td>
-                  ))}
-                </tr>
-
-                {/* Windscreen Excess */}
-                <tr>
-                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Windscreen Excess</td>
-                  {sortedQuotes.map(q => (
-                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
-                      {editingQuoteId === q.id ? (
-                        <select 
-                          value={q.windscreenExcess}
-                          onChange={(e) => updateQuoteField(q.id, 'windscreenExcess', e.target.value)}
-                          className="w-full p-1 border rounded text-xs text-gray-900"
-                        >
-                          {WINDSCREEN_EXCESS_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        q.windscreenExcess
                       )}
                     </td>
                   ))}
@@ -1193,7 +1325,7 @@ function QuoteGeneratorPage() {
                   ))}
                 </tr>
 
-                {/* Badges */}
+                {/* Status */}
                 <tr>
                   <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Status</td>
                   {sortedQuotes.map(q => (
@@ -1239,17 +1371,17 @@ function QuoteGeneratorPage() {
 }
 
 // ============ SAVED HISTORY PAGE ============
-function SavedHistoryPage() {
+interface SavedHistoryPageProps {
+  loadComparison: (comparison: SavedComparison) => void;
+}
+
+function SavedHistoryPage({ loadComparison }: SavedHistoryPageProps) {
   const [history, setHistory] = useState<SavedComparison[]>([]);
 
   useEffect(() => {
-    loadHistory();
-  }, []);
-
-  const loadHistory = () => {
     const saved = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
     setHistory(saved);
-  };
+  }, []);
 
   const deleteComparison = (id: string) => {
     if (!confirm('Delete this comparison?')) return;
@@ -1313,6 +1445,12 @@ function SavedHistoryPage() {
               </div>
               
               <div className="flex gap-2 flex-wrap">
+                <button 
+                  onClick={() => loadComparison(comparison)} 
+                  className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-indigo-700 transition"
+                >
+                  ✏️ Load & Edit
+                </button>
                 {comparison.fileUrl && (
                   <a 
                     href={comparison.fileUrl} 
@@ -1320,14 +1458,14 @@ function SavedHistoryPage() {
                     rel="noopener noreferrer"
                     className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-blue-700 transition text-center"
                   >
-                    🔗 View Online
+                    🔗 View
                   </a>
                 )}
                 <button 
                   onClick={() => downloadComparison(comparison)} 
                   className="flex-1 bg-purple-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-purple-700 transition"
                 >
-                  📥 Download
+                  📥
                 </button>
                 <button onClick={() => deleteComparison(comparison.id)} className="bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 transition">
                   🗑️
@@ -1337,38 +1475,6 @@ function SavedHistoryPage() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ============ MAIN APP ============
-export default function App() {
-  const [currentPage, setCurrentPage] = useState<'generator' | 'history'>('generator');
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-5">
-      <div className="max-w-[1800px] mx-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">NSIB Insurance Quote System</h1>
-          
-          <div className="flex justify-center gap-4">
-            <button 
-              onClick={() => setCurrentPage('generator')} 
-              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'generator' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              📝 Quote Generator
-            </button>
-            <button 
-              onClick={() => setCurrentPage('history')} 
-              className={`px-8 py-3 rounded-lg font-bold transition ${currentPage === 'history' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-            >
-              📁 Saved History
-            </button>
-          </div>
-        </div>
-
-        {currentPage === 'generator' ? <QuoteGeneratorPage /> : <SavedHistoryPage />}
-      </div>
     </div>
   );
 }
