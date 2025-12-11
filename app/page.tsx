@@ -608,12 +608,12 @@ function QuoteGeneratorPage() {
     const htmlContent = generateHTMLContentHelper(sortedQuotes, allCoverageOptions, referenceNumber);
     const fileName = `NSIB_${quotes[0].customerName.replace(/\s/g, '_')}_${quotes[0].make}_${quotes[0].model}_${referenceNumber}.html`;
     
+    // Download locally first
     downloadHTMLFile(htmlContent, fileName);
     
     try {
-      alert('Downloading file and uploading to online storage...');
-      
-      const response = await fetch('/api/upload-to-drive', {
+      // Upload to Vercel Blob Storage
+      const response = await fetch('/api/upload-to-blob', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName, htmlContent }),
@@ -629,6 +629,7 @@ function QuoteGeneratorPage() {
         throw new Error(result.error);
       }
       
+      // Save to localStorage with Vercel Blob URL
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
       const newComparison: SavedComparison = {
         id: Date.now().toString(),
@@ -636,16 +637,58 @@ function QuoteGeneratorPage() {
         vehicle: `${quotes[0].make} ${quotes[0].model}`,
         quotes: quotes,
         referenceNumber: referenceNumber,
-        fileUrl: result.webViewLink,
+        fileUrl: result.url, // Vercel Blob public URL
       };
       savedHistory.unshift(newComparison);
       localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
       
-      alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.webViewLink}\n\nDocument saved!`);
+      alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.url}\n\nYou can continue editing quotes or start a new comparison.`);
+      
+      // DON'T clear quotes - keep them for editing
+      // quotes remain in state so user can continue editing
     } catch (error) {
       console.error('Error:', error);
-      alert(`⚠️ File downloaded, but upload failed.`);
+      alert(`⚠️ File downloaded locally, but cloud upload failed.\n\nYou can continue editing quotes or start a new comparison.`);
+      
+      // Still save to history without URL
+      const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+      const newComparison: SavedComparison = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        vehicle: `${quotes[0].make} ${quotes[0].model}`,
+        quotes: quotes,
+        referenceNumber: referenceNumber,
+      };
+      savedHistory.unshift(newComparison);
+      localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
     }
+  };
+
+  const startNewComparison = () => {
+    if (quotes.length > 0) {
+      if (!confirm('Start a new comparison? This will clear all current quotes.')) {
+        return;
+      }
+    }
+    setQuotes([]);
+    setFormData({
+      enquiryNumber: '',
+      customerName: '',
+      vehicleMake: '',
+      vehicleModel: '',
+      yearModel: '',
+      vehicleValue: '',
+      repairType: '',
+      insuranceCompany: '',
+      productType: '',
+      thirdPartyLiability: 'NA',
+      excess: 0,
+      premium: 0,
+      isRecommended: false,
+      isRenewal: false,
+    });
+    clearForm();
+    setEditingQuoteId(null);
   };
 
   const sortedQuotes = [...quotes].sort((a, b) => a.total - b.total);
@@ -868,9 +911,14 @@ function QuoteGeneratorPage() {
         </div>
 
         {quotes.length > 0 && (
-          <button onClick={saveAndDownload} className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
-            💾 Save & Download ({quotes.length} quotes)
-          </button>
+          <>
+            <button onClick={saveAndDownload} className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition mb-2">
+              💾 Save & Download ({quotes.length} quotes)
+            </button>
+            <button onClick={startNewComparison} className="w-full bg-orange-600 text-white p-3 rounded-lg font-bold hover:bg-orange-700 transition">
+              🔄 Start New Comparison
+            </button>
+          </>
         )}
       </div>
 
@@ -1235,7 +1283,7 @@ function SavedHistoryPage() {
   return (
     <div className="bg-white rounded-xl p-5 shadow-2xl">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
-      <p className="text-sm text-gray-600 mb-4">📁 All comparisons saved locally and in cloud storage</p>
+      <p className="text-sm text-gray-600 mb-4">📁 All comparisons saved locally and in Vercel Blob storage</p>
       
       {history.length === 0 ? (
         <div className="text-center text-gray-400 italic py-20">
