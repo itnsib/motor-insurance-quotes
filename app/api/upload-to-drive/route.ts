@@ -1,8 +1,6 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function POST(request: Request) {
   try {
     const { fileName, htmlContent } = await request.json();
@@ -14,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob Storage
     const blob = await put(fileName, htmlContent, {
       access: 'public',
       contentType: 'text/html',
@@ -24,21 +22,11 @@ export async function POST(request: Request) {
       success: true,
       url: blob.url,
       downloadUrl: blob.downloadUrl,
-      webViewLink: blob.url, // For compatibility with existing code
     });
   } catch (error) {
-    console.error('Error uploading to Vercel Blob:', error);
-    
-    // Return detailed error information
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
+    console.error('Vercel Blob upload error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage,
-        details: errorStack,
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Upload failed' },
       { status: 500 }
     );
   }
