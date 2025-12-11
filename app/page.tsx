@@ -614,7 +614,7 @@ export default function App() {
     
     try {
       // Upload to Vercel Blob Storage
-      const response = await fetch('/api/upload-to-blob', {
+      const response = await fetch('/api/upload-to-drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName, htmlContent }),
