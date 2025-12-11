@@ -631,7 +631,7 @@ export default function App() {
         throw new Error(result.error || 'Upload failed');
       }
       
-      // Save to localStorage with Vercel Blob URL
+      // Save to localStorage AND cloud
       const savedHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
       const newComparison: SavedComparison = {
         id: Date.now().toString(),
@@ -639,10 +639,17 @@ export default function App() {
         vehicle: `${quotes[0].make} ${quotes[0].model}`,
         quotes: quotes,
         referenceNumber: referenceNumber,
-        fileUrl: result.url, // Vercel Blob public URL
+        fileUrl: result.url,
       };
       savedHistory.unshift(newComparison);
       localStorage.setItem('quotesHistory', JSON.stringify(savedHistory));
+
+      // Save to cloud
+      await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: savedHistory }),
+      });
       
       alert(`✅ Success!\n\n📥 File downloaded: ${fileName}\n🔗 Online URL: ${result.url}\n\nYou can continue editing quotes or start a new comparison.`);
       
@@ -741,13 +748,11 @@ export default function App() {
         {currentPage === 'generator' ? (
           <QuoteGeneratorPage 
             quotes={quotes}
-            setQuotes={setQuotes}
             businessType={businessType}
             setBusinessType={setBusinessType}
             formData={formData}
             setFormData={setFormData}
             selectedCoverage={selectedCoverage}
-            setSelectedCoverage={setSelectedCoverage}
             omanCover={omanCover}
             setOmanCover={setOmanCover}
             windscreenExcess={windscreenExcess}
@@ -755,9 +760,7 @@ export default function App() {
             advisorComment={advisorComment}
             setAdvisorComment={setAdvisorComment}
             vat={vat}
-            setVat={setVat}
             total={total}
-            setTotal={setTotal}
             editingQuoteId={editingQuoteId}
             setEditingQuoteId={setEditingQuoteId}
             insuranceCompanies={insuranceCompanies}
@@ -767,7 +770,6 @@ export default function App() {
             handleProductTypeChange={handleProductTypeChange}
             handleCoverageToggle={handleCoverageToggle}
             addQuote={addQuote}
-            clearForm={clearForm}
             removeQuote={removeQuote}
             updateQuoteField={updateQuoteField}
             saveAndDownload={saveAndDownload}
@@ -786,7 +788,6 @@ export default function App() {
 // Component props interfaces
 interface QuoteGeneratorPageProps {
   quotes: Quote[];
-  setQuotes: (quotes: Quote[]) => void;
   businessType: 'Private' | 'Commercial';
   setBusinessType: (type: 'Private' | 'Commercial') => void;
   formData: {
@@ -807,7 +808,6 @@ interface QuoteGeneratorPageProps {
   };
   setFormData: (data: QuoteGeneratorPageProps['formData']) => void;
   selectedCoverage: string[];
-  setSelectedCoverage: (coverage: string[]) => void;
   omanCover: string;
   setOmanCover: (cover: string) => void;
   windscreenExcess: string;
@@ -815,9 +815,7 @@ interface QuoteGeneratorPageProps {
   advisorComment: string;
   setAdvisorComment: (comment: string) => void;
   vat: number;
-  setVat: (vat: number) => void;
   total: number;
-  setTotal: (total: number) => void;
   editingQuoteId: string | null;
   setEditingQuoteId: (id: string | null) => void;
   insuranceCompanies: string[];
@@ -827,7 +825,6 @@ interface QuoteGeneratorPageProps {
   handleProductTypeChange: (productType: string) => void;
   handleCoverageToggle: (label: string) => void;
   addQuote: () => void;
-  clearForm: () => void;
   removeQuote: (id: string) => void;
   updateQuoteField: (id: string, field: keyof Quote, value: string | number | boolean | string[]) => void;
   saveAndDownload: () => void;
@@ -1098,7 +1095,7 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
         )}
       </div>
 
-      {/* RIGHT PANEL - COLUMN COMPARISON */}
+      {/* RIGHT PANEL - COMPARISON TABLE */}
       <div className="bg-white rounded-xl p-5 shadow-2xl max-h-[calc(100vh-150px)] overflow-auto">
         <h2 className="text-xl font-bold text-center mb-5 text-gray-800">Live Comparison ({quotes.length})</h2>
         
@@ -1137,7 +1134,6 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                 </tr>
               </thead>
               <tbody>
-                {/* Comparison table rows - keeping existing implementation */}
                 {/* Company */}
                 <tr>
                   <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Company</td>
@@ -1151,6 +1147,29 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                   <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Product Type</td>
                   {sortedQuotes.map(q => (
                     <td key={q.id} className="p-2 border text-center bg-white text-gray-900 text-xs">{q.productType || 'N/A'}</td>
+                  ))}
+                </tr>
+
+                {/* Repair Type */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Repair Type</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.repairType} 
+                          onChange={(e) => updateQuoteField(q.id, 'repairType', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          <option value="NA">NA</option>
+                          <option value="Agency">Agency</option>
+                          <option value="Non-Agency">Non-Agency</option>
+                          <option value="Agency/Non-Agency">Agency/Non-Agency</option>
+                        </select>
+                      ) : (
+                        q.repairType
+                      )}
+                    </td>
                   ))}
                 </tr>
 
@@ -1212,6 +1231,28 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                         </select>
                       ) : (
                         q.omanCover
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Windscreen Excess */}
+                <tr>
+                  <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">Windscreen Excess</td>
+                  {sortedQuotes.map(q => (
+                    <td key={q.id} className="p-2 border text-center bg-white text-gray-900">
+                      {editingQuoteId === q.id ? (
+                        <select 
+                          value={q.windscreenExcess}
+                          onChange={(e) => updateQuoteField(q.id, 'windscreenExcess', e.target.value)}
+                          className="w-full p-1 border rounded text-xs text-gray-900"
+                        >
+                          {WINDSCREEN_EXCESS_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        q.windscreenExcess
                       )}
                     </td>
                   ))}
@@ -1377,17 +1418,61 @@ interface SavedHistoryPageProps {
 
 function SavedHistoryPage({ loadComparison }: SavedHistoryPageProps) {
   const [history, setHistory] = useState<SavedComparison[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
-    setHistory(saved);
+    loadHistory();
   }, []);
 
-  const deleteComparison = (id: string) => {
+  const loadHistory = async () => {
+    setLoading(true);
+    try {
+      // Try to load from cloud first
+      const response = await fetch('/api/history');
+      const result = await response.json();
+      
+      if (result.success && result.history.length > 0) {
+        setHistory(result.history);
+        // Also save to localStorage as backup
+        localStorage.setItem('quotesHistory', JSON.stringify(result.history));
+      } else {
+        // Fallback to localStorage if cloud is empty
+        const localHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+        setHistory(localHistory);
+        
+        // If localStorage has data, sync it to cloud
+        if (localHistory.length > 0) {
+          await saveHistoryToCloud(localHistory);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading history:', error);
+      // Fallback to localStorage on error
+      const localHistory = JSON.parse(localStorage.getItem('quotesHistory') || '[]');
+      setHistory(localHistory);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveHistoryToCloud = async (historyData: SavedComparison[]) => {
+    try {
+      await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: historyData }),
+      });
+    } catch (error) {
+      console.error('Error saving history to cloud:', error);
+    }
+  };
+
+  const deleteComparison = async (id: string) => {
     if (!confirm('Delete this comparison?')) return;
     const updated = history.filter(h => h.id !== id);
-    localStorage.setItem('quotesHistory', JSON.stringify(updated));
     setHistory(updated);
+    localStorage.setItem('quotesHistory', JSON.stringify(updated));
+    await saveHistoryToCloud(updated);
   };
 
   const downloadComparison = (comparison: SavedComparison) => {
@@ -1412,10 +1497,30 @@ function SavedHistoryPage({ loadComparison }: SavedHistoryPageProps) {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-5 shadow-2xl">
+        <div className="text-center py-20">
+          <div className="text-xl font-bold text-gray-600">☁️ Loading history from cloud...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl p-5 shadow-2xl">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Saved History</h2>
-      <p className="text-sm text-gray-600 mb-4">📁 All comparisons saved locally and in Vercel Blob storage</p>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Saved History</h2>
+          <p className="text-sm text-gray-600">☁️ Synced across all devices • Survives cache clearing</p>
+        </div>
+        <button 
+          onClick={loadHistory}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+        >
+          🔄 Refresh
+        </button>
+      </div>
       
       {history.length === 0 ? (
         <div className="text-center text-gray-400 italic py-20">
