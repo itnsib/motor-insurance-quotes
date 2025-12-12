@@ -307,8 +307,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .total-row td { color: #000 !important; }
         .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
         .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment { background: #e3f2fd; padding: 2.5mm; margin: 2mm 0 0 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #2196F3; color: #000; }
-        .advisor-comment h4 { font-size: 9px; margin-bottom: 1.5mm; color: #1565C0; }
+        .advisor-comment-cell { background: #e3f2fd !important; font-size: 8px; text-align: left !important; padding: 2mm !important; line-height: 1.3; color: #000 !important; vertical-align: top !important; }
         .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 9px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 11px; margin-bottom: 1.5mm; color: #856404; }
         .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.3; }
@@ -393,15 +392,12 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     <td>Total</td>
                     ${sortedQuotes.map(q => `<td>AED ${q.total.toFixed(2)}</td>`).join('')}
                 </tr>
+                <tr>
+                    <td>Advisor Comment</td>
+                    ${sortedQuotes.map(q => `<td class="advisor-comment-cell">${q.advisorComment && q.advisorComment.trim() ? q.advisorComment : '-'}</td>`).join('')}
+                </tr>
             </tbody>
         </table>
-        
-        ${sortedQuotes.filter(q => q.advisorComment && q.advisorComment.trim()).map(q => `
-        <div class="advisor-comment">
-            <h4>Advisor Comment - ${q.company}</h4>
-            <p>${q.advisorComment}</p>
-        </div>
-        `).join('')}
         
         <div class="disclaimer">
             <h4>Disclaimer</h4>
