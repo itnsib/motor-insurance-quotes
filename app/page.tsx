@@ -74,8 +74,7 @@ const PRIVATE_INSURANCE_COMPANIES = [
 
 const COMMERCIAL_INSURANCE_COMPANIES = [
   'SUKOON', 'ADAMJEE', 'METHAQ (ind. pickup)', 'NEW INDIA ABU DHABI',
-  'DNIRC', 'NIA DXB', 'AL SAGR',
-  'EMIRATES', 'AL ITTIHAD AL WATANI', 'NGI'
+  'DNIRC', 'NIA DXB', 'AL SAGR', 'EMIRATES', 'AL ITTIHAD AL WATANI', 'NGI'
 ];
 
 const COMPANY_PRODUCT_TYPES: Record<string, string[]> = {
@@ -284,19 +283,19 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     <style>
         @page { size: A4; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; font-size: 10px; color: #000; }
+        body { font-family: Arial; font-size: 12px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
         .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm 25mm 10mm; position: relative; }
         .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
-        .reference-number { position: absolute; top: 2mm; left: 10mm; font-size: 7px; color: #666; }
-        .section-title { font-size: 16px; font-weight: bold; text-align: center; margin: 3mm 0; color: #000; }
-        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 10px; color: #000; }
-        .comparison-table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 2mm 0; table-layout: fixed; }
+        .reference-number { position: absolute; top: 2mm; left: 10mm; font-size: 9px; color: #666; }
+        .section-title { font-size: 18px; font-weight: bold; text-align: center; margin: 3mm 0; color: #000; }
+        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 12px; color: #000; }
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 2mm 0; table-layout: fixed; }
         .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2mm 1.5mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 10px; padding: 2.5mm 1.5mm; font-weight: bold; }
+        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 12px; padding: 2.5mm 1.5mm; font-weight: bold; }
         .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 40mm; }
         .comparison-table td { background: #fff; color: #000 !important; }
         .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; color: #000 !important; }
@@ -306,16 +305,16 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .not-included { color: #dc3545 !important; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
         .total-row td { color: #000 !important; }
-        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 7px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment { background: #e3f2fd; padding: 2.5mm; margin: 2mm 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #2196F3; color: #000; }
-        .advisor-comment h4 { font-size: 10px; margin-bottom: 1.5mm; color: #1565C0; }
-        .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 7px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
-        .disclaimer h4 { font-size: 9px; margin-bottom: 1.5mm; color: #856404; }
-        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 7px; line-height: 1.3; }
+        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
+        .advisor-comment { background: #e3f2fd; padding: 2.5mm; margin: 2mm 0 0 0; font-size: 8px; line-height: 1.3; border-left: 2mm solid #2196F3; color: #000; }
+        .advisor-comment h4 { font-size: 9px; margin-bottom: 1.5mm; color: #1565C0; }
+        .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 9px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
+        .disclaimer h4 { font-size: 11px; margin-bottom: 1.5mm; color: #856404; }
+        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.3; }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
-        .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 7.5px; }
+        .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 9.5px; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
@@ -340,8 +339,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     <th>BENEFITS</th>
                     ${sortedQuotes.map((q) => `
                         <th>
-                            <div style="font-size: 8px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
-                            ${q.productType ? `<div style="font-size: 7px; color: #fff; margin-bottom: 1mm;">${q.productType}</div>` : ''}
+                            <div style="font-size: 10px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            ${q.productType ? `<div style="font-size: 9px; color: #fff; margin-bottom: 1mm;">${q.productType}</div>` : ''}
                             ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                             ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
                         </th>
@@ -397,12 +396,12 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
             </tbody>
         </table>
         
-        ${sortedQuotes.map(q => q.advisorComment ? `
+        ${sortedQuotes.filter(q => q.advisorComment && q.advisorComment.trim()).map(q => `
         <div class="advisor-comment">
             <h4>Advisor Comment - ${q.company}</h4>
             <p>${q.advisorComment}</p>
         </div>
-        ` : '').join('')}
+        `).join('')}
         
         <div class="disclaimer">
             <h4>Disclaimer</h4>
@@ -522,10 +521,7 @@ export default function App() {
       return;
     }
 
-    if (!advisorComment || advisorComment.trim() === '') {
-      alert('Please enter an Advisor Comment for this quote');
-      return;
-    }
+    // Advisor comment is now optional - removed validation
 
     const newQuote: Quote = {
       id: Date.now().toString(),
@@ -1067,8 +1063,7 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
 
           <div className="mb-3">
             <label className="block text-xs font-bold mb-1 text-gray-800">
-              Advisor Comment *
-              <span className="text-red-500 ml-1">Required for this quote</span>
+              Advisor Comment (Optional)
             </label>
             <textarea
               className="w-full p-2 border-2 rounded text-sm text-gray-900 bg-white focus:border-indigo-500"
@@ -1110,11 +1105,10 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
               <thead>
                 <tr className="sticky top-0 bg-white z-20">
                   <th className="bg-gray-200 p-2 border text-left sticky left-0 z-30 min-w-[150px] text-gray-900">Field</th>
-                  {sortedQuotes.map((q, index) => (
+                  {sortedQuotes.map((q) => (
                     <th key={q.id} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 border text-center min-w-[180px]">
                       <div className="font-bold text-sm mb-1">{q.company}</div>
                       {q.productType && <div className="text-xs mb-1 opacity-90">{q.productType.substring(0, 30)}{q.productType.length > 30 ? '...' : ''}</div>}
-                      {index === 0 && <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold inline-block mb-2">BEST PRICE</div>}
                       <div className="text-base font-bold">AED {q.total.toFixed(2)}</div>
                       <div className="flex gap-1 justify-center mt-2">
                         {editingQuoteId === q.id ? (
@@ -1259,12 +1253,12 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                   ))}
                 </tr>
 
-                {/* Coverage Options */}
-                {allCoverageOptions.map(option => (
-                  <tr key={option}>
-                    <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">{option}</td>
+                {/* Coverage Options - SHOW ALL OPTIONS when editing */}
+                {COVERAGE_OPTIONS.map(option => (
+                  <tr key={option.id}>
+                    <td className="p-2 border font-bold bg-gray-50 sticky left-0 z-10 text-gray-900">{option.label}</td>
                     {sortedQuotes.map(q => {
-                      const included = q.coverageOptions.includes(option);
+                      const included = q.coverageOptions.includes(option.label);
                       return (
                         <td key={q.id} className="p-2 border text-center bg-white">
                           {editingQuoteId === q.id ? (
@@ -1273,8 +1267,8 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                               checked={included}
                               onChange={(e) => {
                                 const newOptions = e.target.checked 
-                                  ? [...q.coverageOptions, option]
-                                  : q.coverageOptions.filter(o => o !== option);
+                                  ? [...q.coverageOptions, option.label]
+                                  : q.coverageOptions.filter(o => o !== option.label);
                                 updateQuoteField(q.id, 'coverageOptions', newOptions);
                               }}
                             />
@@ -1341,8 +1335,8 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                 {/* Total */}
                 <tr className="bg-blue-100">
                   <td className="p-2 border font-bold bg-gray-100 sticky left-0 z-10 text-gray-900">Total Premium</td>
-                  {sortedQuotes.map((q, index) => (
-                    <td key={q.id} className={`p-2 border text-center font-bold ${index === 0 ? 'bg-green-100 text-green-800 text-base' : 'bg-blue-100 text-gray-900'}`}>
+                  {sortedQuotes.map((q) => (
+                    <td key={q.id} className="p-2 border text-center font-bold bg-blue-100 text-gray-900 text-base">
                       AED {q.total.toFixed(2)}
                     </td>
                   ))}
@@ -1359,9 +1353,10 @@ function QuoteGeneratorPage(props: QuoteGeneratorPageProps) {
                           onChange={(e) => updateQuoteField(q.id, 'advisorComment', e.target.value)}
                           className="w-full p-1 border rounded text-xs text-gray-900"
                           rows={2}
+                          placeholder="Optional"
                         />
                       ) : (
-                        <div className="text-xs text-left">{q.advisorComment}</div>
+                        <div className="text-xs text-left">{q.advisorComment || '-'}</div>
                       )}
                     </td>
                   ))}
