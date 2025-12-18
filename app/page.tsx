@@ -49,7 +49,7 @@ interface CompanyDefaults {
 const VEHICLE_MAKES = [
   'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'BAIC Motor', 'Bentley', 'Bestune', 'BMW',
   'Bugatti', 'Buick', 'BYD', 'Cadillac', 'Changan', 'Chery', 'Chevrolet', 'Chrysler',
-  'Citroën', 'Dacia', 'Daewoo', 'Daihatsu', 'Dodge', 'Dongfeng', 'Exeed', 'Ferrari',
+  'Citroën', 'Dacia', 'Daewoo', 'Daihatsu', 'Dodge', 'Dongfeng' , 'Ducati', 'Exeed', 'Ferrari',
   'Fiat', 'Ford', 'GAC Motor', 'Geely', 'Genesis', 'GMC', 'Great Wall', 'Haval',
   'Hino 300', 'Honda', 'Hongqi', 'Hummer', 'Hyundai', 'Infiniti', 'Isuzu', 'JAC Motors',
   'Jaguar', 'Jeep', 'Jetour', 'Kia', 'Lamborghini', 'Land Rover', 'Lexus', 'Lincoln',
