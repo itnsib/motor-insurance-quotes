@@ -287,7 +287,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial; font-size: 12px; color: #000; margin: 0; padding: 0; }
         
-        /* PAGE 1 - Portrait */
+        /* PAGE 1 - Portrait - CENTERED */
         .page1 { 
             width: 210mm; 
             height: 297mm; 
@@ -296,13 +296,16 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
             align-items: center;
             justify-content: center;
             background: white;
+            padding: 0;
+            margin: 0;
         }
         .page1 img { 
-            max-width: 100%; 
-            max-height: 100%; 
-            width: 100%;
-            height: 100%;
+            max-width: 210mm; 
+            max-height: 297mm; 
+            width: auto;
+            height: auto;
             object-fit: contain;
+            display: block;
         }
         
         /* PAGE 2 - Landscape */
@@ -358,7 +361,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .footer-contact strong { display: block; margin-bottom: 0.3mm; color: #fff !important; font-size: 8px; }
         @media print { 
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .page1 { page-break-after: always; }
+            .page1 { page-break-after: always; display: flex; align-items: center; justify-content: center; }
             .page2 { page-break-before: always; }
             .footer-contact { position: fixed; bottom: 0; }
         }
