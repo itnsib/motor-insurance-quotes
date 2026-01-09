@@ -287,17 +287,24 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         body { font-family: Arial; font-size: 12px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
-        .page2 { width: 297mm; height: 210mm; padding: 8mm 10mm 25mm 10mm; position: relative; page-break-before: always; }
-        .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
-        .header-logo { height: 12mm; }
-        .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
-        .reference-number { position: absolute; top: 2mm; left: 10mm; font-size: 9px; color: #666; }
-        .section-title { font-size: 18px; font-weight: bold; text-align: center; margin: 3mm 0; color: #000; }
-        .vehicle-info { background: #f8f9fa; padding: 2mm; text-align: center; margin: 2mm 0; font-size: 12px; color: #000; }
-        .comparison-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 2mm 0; table-layout: fixed; }
-        .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 2mm 1.5mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
-        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 12px; padding: 2.5mm 1.5mm; font-weight: bold; }
-        .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 40mm; }
+        .page2 { 
+            width: 297mm; 
+            height: 210mm; 
+            padding: 6mm 8mm 20mm 8mm; 
+            position: relative; 
+            page-break-before: always; 
+            page-break-after: always;
+        }
+        .header-simple { text-align: center; margin-bottom: 3mm; position: relative; height: 10mm; }
+        .header-logo { height: 10mm; }
+        .header-corner { position: absolute; right: 0; top: 0; height: 12mm; }
+        .reference-number { position: absolute; top: 2mm; left: 8mm; font-size: 8px; color: #666; }
+        .section-title { font-size: 16px; font-weight: bold; text-align: center; margin: 2mm 0; color: #000; }
+        .vehicle-info { background: #f8f9fa; padding: 1.5mm; text-align: center; margin: 2mm 0; font-size: 11px; color: #000; }
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 2mm 0; table-layout: fixed; }
+        .comparison-table th, .comparison-table td { border: 1px solid #000; padding: 1.5mm 1mm; text-align: center; vertical-align: middle; word-wrap: break-word; }
+        .comparison-table th { background: #1e40af; color: #fff !important; font-size: 11px; padding: 2mm 1mm; font-weight: bold; }
+        .comparison-table th:first-child, .comparison-table td:first-child { text-align: left; width: 38mm; }
         .comparison-table td { background: #fff; color: #000 !important; }
         .comparison-table td:first-child { font-weight: bold; background: #f8f9fa; color: #000 !important; }
         .light-blue-row { background: #e3f2fd !important; }
@@ -306,18 +313,31 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .not-included { color: #dc3545 !important; font-weight: bold; }
         .total-row { background: #e3f2fd !important; font-weight: bold; }
         .total-row td { color: #000 !important; }
-        .renewal-badge { background: #ffc107; color: #000 !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .recommended-badge { background: #28a745; color: #fff !important; padding: 1mm 2.5mm; border-radius: 10mm; font-size: 9px; font-weight: bold; display: inline-block; margin-top: 1mm; }
-        .advisor-comment-cell { background: #e3f2fd !important; font-size: 8px; text-align: left !important; padding: 2mm !important; line-height: 1.3; color: #000 !important; vertical-align: top !important; }
-        .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 9px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
-        .disclaimer h4 { font-size: 11px; margin-bottom: 1.5mm; color: #856404; }
-        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 297mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.3; }
+        .renewal-badge { background: #ffc107; color: #000 !important; padding: 0.5mm 2mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 0.5mm; }
+        .recommended-badge { background: #28a745; color: #fff !important; padding: 0.5mm 2mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 0.5mm; }
+        .advisor-comment-cell { background: #e3f2fd !important; font-size: 7px; text-align: left !important; padding: 1.5mm !important; line-height: 1.2; color: #000 !important; vertical-align: top !important; }
+        .disclaimer { background: #fff3cd; padding: 2mm; margin: 2mm 0; font-size: 8px; line-height: 1.2; border-left: 2mm solid #ffc107; color: #000; }
+        .disclaimer h4 { font-size: 10px; margin-bottom: 1mm; color: #856404; }
+        .footer-contact { 
+            position: fixed;
+            bottom: 0; 
+            left: 0; 
+            width: 297mm; 
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); 
+            padding: 2mm 8mm; 
+            display: flex; 
+            justify-content: space-between; 
+            color: #fff !important; 
+            font-size: 8px; 
+            line-height: 1.2; 
+        }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
-        .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 9.5px; }
+        .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 9px; }
         @media print { 
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .page2 { page-break-before: always; }
+            .page2 { page-break-before: always; page-break-after: always; }
+            .footer-contact { position: fixed; bottom: 0; }
         }
     </style>
 </head>
@@ -342,8 +362,8 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
                     <th>BENEFITS</th>
                     ${sortedQuotes.map((q) => `
                         <th>
-                            <div style="font-size: 10px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
-                            ${q.productType ? `<div style="font-size: 9px; color: #fff; margin-bottom: 1mm;">${q.productType}</div>` : ''}
+                            <div style="font-size: 9px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                            ${q.productType ? `<div style="font-size: 8px; color: #fff; margin-bottom: 0.5mm;">${q.productType}</div>` : ''}
                             ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
                             ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
                         </th>
@@ -406,7 +426,7 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         <div class="disclaimer">
             <h4>Disclaimer</h4>
             <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
-            <p style="margin-top: 1.5mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+            <p style="margin-top: 1mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
         </div>
         
         <div class="footer-contact">
