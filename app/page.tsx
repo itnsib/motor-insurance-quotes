@@ -281,12 +281,13 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     <meta charset="UTF-8">
     <title>NSIB Insurance Comparison</title>
     <style>
-        @page { size: A4; margin: 0; }
+        @page { size: A4 portrait; margin: 0; }
+        @page :nth(2) { size: A4 landscape; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial; font-size: 12px; color: #000; }
         .page1 { width: 210mm; height: 297mm; page-break-after: always; }
         .page1 img { width: 100%; height: 100%; object-fit: contain; }
-        .page2 { width: 210mm; min-height: 297mm; padding: 8mm 10mm 25mm 10mm; position: relative; }
+        .page2 { width: 297mm; height: 210mm; padding: 8mm 10mm 25mm 10mm; position: relative; page-break-before: always; }
         .header-simple { text-align: center; margin-bottom: 5mm; position: relative; height: 12mm; }
         .header-logo { height: 12mm; }
         .header-corner { position: absolute; right: 0; top: 0; height: 15mm; }
@@ -310,11 +311,14 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .advisor-comment-cell { background: #e3f2fd !important; font-size: 8px; text-align: left !important; padding: 2mm !important; line-height: 1.3; color: #000 !important; vertical-align: top !important; }
         .disclaimer { background: #fff3cd; padding: 2.5mm; margin: 2mm 0; font-size: 9px; line-height: 1.3; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 11px; margin-bottom: 1.5mm; color: #856404; }
-        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 210mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.3; }
+        .footer-contact { position: absolute; bottom: 0; left: 0; right: 0; width: 297mm; background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); padding: 2.5mm 10mm; display: flex; justify-content: space-between; color: #fff !important; font-size: 9px; line-height: 1.3; }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
         .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 9.5px; }
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        @media print { 
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page2 { page-break-before: always; }
+        }
     </style>
 </head>
 <body>
