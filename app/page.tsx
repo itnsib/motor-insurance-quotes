@@ -290,10 +290,15 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .page2 { 
             width: 297mm; 
             height: 210mm; 
-            padding: 6mm 8mm 20mm 8mm; 
+            padding: 6mm 8mm 6mm 8mm; 
             position: relative; 
-            page-break-before: always; 
-            page-break-after: always;
+            page-break-before: always;
+            display: flex;
+            flex-direction: column;
+        }
+        .page2-content {
+            flex: 1;
+            overflow: hidden;
         }
         .header-simple { text-align: center; margin-bottom: 3mm; position: relative; height: 10mm; }
         .header-logo { height: 10mm; }
@@ -316,28 +321,25 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
         .renewal-badge { background: #ffc107; color: #000 !important; padding: 0.5mm 2mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 0.5mm; }
         .recommended-badge { background: #28a745; color: #fff !important; padding: 0.5mm 2mm; border-radius: 10mm; font-size: 8px; font-weight: bold; display: inline-block; margin-top: 0.5mm; }
         .advisor-comment-cell { background: #e3f2fd !important; font-size: 7px; text-align: left !important; padding: 1.5mm !important; line-height: 1.2; color: #000 !important; vertical-align: top !important; }
-        .disclaimer { background: #fff3cd; padding: 2mm; margin: 2mm 0; font-size: 8px; line-height: 1.2; border-left: 2mm solid #ffc107; color: #000; }
+        .disclaimer { background: #fff3cd; padding: 2mm; margin: 2mm 0 3mm 0; font-size: 8px; line-height: 1.2; border-left: 2mm solid #ffc107; color: #000; }
         .disclaimer h4 { font-size: 10px; margin-bottom: 1mm; color: #856404; }
         .footer-contact { 
-            position: fixed;
-            bottom: 0; 
-            left: 0; 
-            width: 297mm; 
+            width: 100%;
             background: linear-gradient(135deg, rgba(255, 107, 107, 0.85) 0%, rgba(238, 90, 111, 0.85) 100%); 
-            padding: 2mm 8mm; 
+            padding: 2.5mm 3mm; 
             display: flex; 
             justify-content: space-between; 
             color: #fff !important; 
             font-size: 8px; 
-            line-height: 1.2; 
+            line-height: 1.3; 
+            margin-top: auto;
         }
         .footer-left, .footer-right { flex: 1; color: #fff !important; }
         .footer-right { text-align: right; }
         .footer-contact strong { display: block; margin-bottom: 0.5mm; color: #fff !important; font-size: 9px; }
         @media print { 
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .page2 { page-break-before: always; page-break-after: always; }
-            .footer-contact { position: fixed; bottom: 0; }
+            .page2 { page-break-before: always; }
         }
     </style>
 </head>
@@ -347,86 +349,88 @@ function generateHTMLContentHelper(sortedQuotes: Quote[], allCoverageOptions: st
     </div>
     
     <div class="page2">
-        <div class="reference-number">Ref: ${referenceNumber}</div>
-        <div class="header-simple">
-            <img src="https://i.imgur.com/GCOPBN1.png" alt="Logo" class="header-logo">
-            <img src="https://i.imgur.com/Wsv3Ah2.png" alt="Corner" class="header-corner">
-        </div>
-        <div class="section-title">MOTOR INSURANCE COMPARISON</div>
-        <div class="vehicle-info">
-            <strong>Enquiry: ${sortedQuotes[0].enquiryNumber} | Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong>
-        </div>
-        <table class="comparison-table">
-            <thead>
-                <tr>
-                    <th>BENEFITS</th>
-                    ${sortedQuotes.map((q) => `
-                        <th>
-                            <div style="font-size: 9px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
-                            ${q.productType ? `<div style="font-size: 8px; color: #fff; margin-bottom: 0.5mm;">${q.productType}</div>` : ''}
-                            ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
-                            ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
-                        </th>
-                    `).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Repair Type</td>
-                    ${sortedQuotes.map(q => `<td>${q.repairType}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>Vehicle Value</td>
-                    ${sortedQuotes.map(q => `<td>${q.value}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>Third Party Liability</td>
-                    ${sortedQuotes.map(q => `<td>${q.thirdPartyLiability}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>Oman Cover (Own damage only)</td>
-                    ${sortedQuotes.map(q => `<td>${q.omanCover}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>Windscreen Excess</td>
-                    ${sortedQuotes.map(q => `<td>${q.windscreenExcess}</td>`).join('')}
-                </tr>
-                ${allCoverageOptions.map(option => `
+        <div class="page2-content">
+            <div class="reference-number">Ref: ${referenceNumber}</div>
+            <div class="header-simple">
+                <img src="https://i.imgur.com/GCOPBN1.png" alt="Logo" class="header-logo">
+                <img src="https://i.imgur.com/Wsv3Ah2.png" alt="Corner" class="header-corner">
+            </div>
+            <div class="section-title">MOTOR INSURANCE COMPARISON</div>
+            <div class="vehicle-info">
+                <strong>Enquiry: ${sortedQuotes[0].enquiryNumber} | Customer: ${sortedQuotes[0].customerName} | Vehicle: ${sortedQuotes[0].make} ${sortedQuotes[0].model} (${sortedQuotes[0].year})</strong>
+            </div>
+            <table class="comparison-table">
+                <thead>
                     <tr>
-                        <td>${option}</td>
-                        ${sortedQuotes.map(q => {
-                            const inc = q.coverageOptions.includes(option);
-                            return `<td><span class="${inc ? 'included' : 'not-included'}">${inc ? 'YES' : 'NO'}</span></td>`;
-                        }).join('')}
+                        <th>BENEFITS</th>
+                        ${sortedQuotes.map((q) => `
+                            <th>
+                                <div style="font-size: 9px; margin-bottom: 1mm; color: #fff;">${q.company.length > 30 ? q.company.substring(0, 27) + '...' : q.company}</div>
+                                ${q.productType ? `<div style="font-size: 8px; color: #fff; margin-bottom: 0.5mm;">${q.productType}</div>` : ''}
+                                ${q.isRenewal ? '<div class="renewal-badge">RENEWAL</div>' : ''}
+                                ${q.isRecommended ? '<div class="recommended-badge">RECOMMENDED</div>' : ''}
+                            </th>
+                        `).join('')}
                     </tr>
-                `).join('')}
-                <tr class="light-blue-row">
-                    <td>Excess</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.excess.toLocaleString()}</td>`).join('')}
-                </tr>
-                <tr class="light-blue-row">
-                    <td>Premium</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.premium.toFixed(2)}</td>`).join('')}
-                </tr>
-                <tr class="light-blue-row">
-                    <td>VAT (5%)</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.vat.toFixed(2)}</td>`).join('')}
-                </tr>
-                <tr class="light-blue-row total-row">
-                    <td>Total</td>
-                    ${sortedQuotes.map(q => `<td>AED ${q.total.toFixed(2)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>Advisor Comment</td>
-                    ${sortedQuotes.map(q => `<td class="advisor-comment-cell">${q.advisorComment && q.advisorComment.trim() ? q.advisorComment : '-'}</td>`).join('')}
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="disclaimer">
-            <h4>Disclaimer</h4>
-            <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
-            <p style="margin-top: 1mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Repair Type</td>
+                        ${sortedQuotes.map(q => `<td>${q.repairType}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td>Vehicle Value</td>
+                        ${sortedQuotes.map(q => `<td>${q.value}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td>Third Party Liability</td>
+                        ${sortedQuotes.map(q => `<td>${q.thirdPartyLiability}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td>Oman Cover (Own damage only)</td>
+                        ${sortedQuotes.map(q => `<td>${q.omanCover}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td>Windscreen Excess</td>
+                        ${sortedQuotes.map(q => `<td>${q.windscreenExcess}</td>`).join('')}
+                    </tr>
+                    ${allCoverageOptions.map(option => `
+                        <tr>
+                            <td>${option}</td>
+                            ${sortedQuotes.map(q => {
+                                const inc = q.coverageOptions.includes(option);
+                                return `<td><span class="${inc ? 'included' : 'not-included'}">${inc ? 'YES' : 'NO'}</span></td>`;
+                            }).join('')}
+                        </tr>
+                    `).join('')}
+                    <tr class="light-blue-row">
+                        <td>Excess</td>
+                        ${sortedQuotes.map(q => `<td>AED ${q.excess.toLocaleString()}</td>`).join('')}
+                    </tr>
+                    <tr class="light-blue-row">
+                        <td>Premium</td>
+                        ${sortedQuotes.map(q => `<td>AED ${q.premium.toFixed(2)}</td>`).join('')}
+                    </tr>
+                    <tr class="light-blue-row">
+                        <td>VAT (5%)</td>
+                        ${sortedQuotes.map(q => `<td>AED ${q.vat.toFixed(2)}</td>`).join('')}
+                    </tr>
+                    <tr class="light-blue-row total-row">
+                        <td>Total</td>
+                        ${sortedQuotes.map(q => `<td>AED ${q.total.toFixed(2)}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td>Advisor Comment</td>
+                        ${sortedQuotes.map(q => `<td class="advisor-comment-cell">${q.advisorComment && q.advisorComment.trim() ? q.advisorComment : '-'}</td>`).join('')}
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="disclaimer">
+                <h4>Disclaimer</h4>
+                <p>While we make every effort to ensure the accuracy and timeliness of the details provided in the comparison table, there may be instances where the actual coverage differs. In such cases, the terms outlined in the insurer&apos;s official policy wording and schedule will take precedence over the information provided by us.</p>
+                <p style="margin-top: 1mm;">For the complete <strong>Material Information Declaration</strong> and <strong>Disclaimer</strong>, please refer to the quote.</p>
+            </div>
         </div>
         
         <div class="footer-contact">
